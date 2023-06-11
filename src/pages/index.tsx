@@ -1,4 +1,5 @@
-import { type NextPage } from "next";
+import type { NextPage } from "next";
+import type { FormEvent } from "react";
 import Head from "next/head";
 import { toast } from "react-hot-toast";
 import { api } from "~/utils/api";
@@ -10,6 +11,28 @@ const Home: NextPage = () => {
   const { data, refetch } = api.users.getUsers.useQuery();
   const { mutateAsync: deleteuser } = api.users.deleteUser.useMutation();
 
+  function refetchHandler() {
+    refetch()
+      .catch(() => {
+        toast.error(`Failed to refetch users`);
+      });
+  }
+
+  function submitForm(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const name = formData.get("name") as string;
+
+    createUser({ name: name })
+      .then(() => {
+        toast.success(`Created user ${name}`);
+        refetchHandler();
+      })
+      .catch(() => {
+        toast.error(`Failed to create user ${name}`);
+      });
+  }
+
   return (
     <>
       <Head>
@@ -20,15 +43,7 @@ const Home: NextPage = () => {
       <main>
         <form
           className="flex flex-col items-center justify-center py-2"
-          onSubmit={(e) => {
-            e.preventDefault()
-            const formData = new FormData(e.target as HTMLFormElement)
-            const name = formData.get('name') as string;
-            createUser({ name: name }).then(() => {
-              toast.success(`Created user ${name}`);
-              refetch();
-            })
-          }}>
+          onSubmit={(e) => submitForm(e)}>
           <input
             type="text"
             name="name"
@@ -51,10 +66,14 @@ const Home: NextPage = () => {
               <button
                 className="text-lg text-red-600"
                 onClick={() => {
-                  deleteuser({ id: user.id }).then(() => {
-                    toast.success(`Deleted user ${user.name}`);
-                    refetch();
-                  })
+                  deleteuser({ id: user.id })
+                    .then(() => {
+                      toast.success(`Deleted user ${user.name ?? "unknown"}`);
+                      refetchHandler();
+                    })
+                    .catch(() => {
+                      toast.error(`Failed to delete user ${user.name ?? "unknown"}`);
+                    })
                 }}
               >
                 <AiOutlineDelete />

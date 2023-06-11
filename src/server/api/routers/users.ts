@@ -11,7 +11,7 @@ export const usersRouter = createTRPCRouter({
         name: z.string(),
       }))
     .mutation(async ({ input }) => {
-      await db.insert(users).values({ name: input.name });
+      await db.insert(users).values({ name: input.name })
     }),
 
   getUsers: publicProcedure
