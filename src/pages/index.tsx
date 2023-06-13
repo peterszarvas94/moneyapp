@@ -1,37 +1,30 @@
 import type { NextPage } from "next";
-import type { FormEvent } from "react";
 import Head from "next/head";
-import { toast } from "react-hot-toast";
+// import { toast } from "react-hot-toast";
 import { api } from "~/utils/api";
-import { AiOutlineDelete } from 'react-icons/ai';
+import { UserButton, useSession } from "@clerk/nextjs";
+import Link from "next/link";
+import { useEffect } from "react";
 
 const Home: NextPage = () => {
 
   const { mutateAsync: createUser } = api.users.createUser.useMutation();
   const { data, refetch } = api.users.getUsers.useQuery();
-  const { mutateAsync: deleteuser } = api.users.deleteUser.useMutation();
+  // const { mutateAsync: deleteuser } = api.users.deleteUser.useMutation();
+  //
+  // function refetchHandler() {
+  //   refetch()
+  //     .catch(() => {
+  //       toast.error(`Failed to refetch users`);
+  //     });
+  // }
+  //
 
-  function refetchHandler() {
-    refetch()
-      .catch(() => {
-        toast.error(`Failed to refetch users`);
-      });
-  }
+  const { session } = useSession();
 
-  function submitForm(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const name = formData.get("name") as string;
-
-    createUser({ name: name })
-      .then(() => {
-        toast.success(`Created user ${name}`);
-        refetchHandler();
-      })
-      .catch(() => {
-        toast.error(`Failed to create user ${name}`);
-      });
-  }
+  useEffect(() => {
+    console.log(session);
+  }, [session])
 
   return (
     <>
@@ -41,46 +34,16 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <form
-          className="flex flex-col items-center justify-center py-2"
-          onSubmit={(e) => submitForm(e)}>
-          <input
-            type="text"
-            name="name"
-            placeholder="Name"
-            className="p-4 mb-4 text-2xl border border-gray-300 rounded-md"
-          />
-          <button
-            type="submit"
-            className="px-6 py-4 text-lg font-bold text-white bg-blue-600 rounded-md"
-          >
-            Submit
-          </button>
-        </form>
-        <ul
-          className="flex items-center justify-center py-2 gap-4"
-        >
-          {data?.map((user) => (
-            <li key={user.id} className="p-4 mb-4 text-xl border border-gray-300 rounded-md flex">
-              <div>{user.name}</div>
-              <button
-                className="text-lg text-red-600"
-                onClick={() => {
-                  deleteuser({ id: user.id })
-                    .then(() => {
-                      toast.success(`Deleted user ${user.name ?? "unknown"}`);
-                      refetchHandler();
-                    })
-                    .catch(() => {
-                      toast.error(`Failed to delete user ${user.name ?? "unknown"}`);
-                    })
-                }}
-              >
-                <AiOutlineDelete />
-              </button>
-            </li>
-          ))}
-        </ul>
+        {session && (
+          <UserButton afterSignOutUrl="/" />
+        )}
+        {!session && (
+          <div className="flex flex-col gap-2 p-2">
+            <Link href="/sign-in">
+              Sign In
+            </Link>
+          </div>
+        )}
       </main>
     </>
   );
