@@ -54,10 +54,13 @@ const Home: NextPage = () => {
               Migrate
             </button>
             <button
-              onClick={async () => {
-                await createUser({
+              onClick={() => {
+                createUser({
                   name: "Test",
-                });
+                })
+                  .catch(() => {
+                    toast.error(`Failed to create user`);
+                  });
               }}
             >
               Create User
