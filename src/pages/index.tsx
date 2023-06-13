@@ -1,15 +1,20 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-// import { toast } from "react-hot-toast";
+import Link from "next/link";
 import { api } from "~/utils/api";
 import { UserButton, useSession } from "@clerk/nextjs";
-import Link from "next/link";
-import { useEffect } from "react";
+import { toast } from "react-hot-toast";
 
 const Home: NextPage = () => {
 
+  const { mutateAsync: migrate } = api.migration.migrate.useMutation();
   const { mutateAsync: createUser } = api.users.createUser.useMutation();
-  const { data, refetch } = api.users.getUsers.useQuery();
+  const { mutateAsync: createAccount } = api.accounts.createAccount.useMutation();
+  const { mutateAsync: addAdmin } = api.accounts.addUserToAccountAdmins.useMutation();
+  const { mutateAsync: createIncome } = api.incomes.createIncome.useMutation();
+  const { mutateAsync: deleteIncome } = api.incomes.deleteIncome.useMutation();
+
+  // const { data, refetch } = api.users.getUsers.useQuery();
   // const { mutateAsync: deleteuser } = api.users.deleteUser.useMutation();
   //
   // function refetchHandler() {
@@ -21,10 +26,10 @@ const Home: NextPage = () => {
   //
 
   const { session } = useSession();
-
-  useEffect(() => {
-    console.log(session);
-  }, [session])
+  //
+  // useEffect(() => {
+  //   console.log(session);
+  // }, [session])
 
   return (
     <>
@@ -35,7 +40,83 @@ const Home: NextPage = () => {
       </Head>
       <main>
         {session && (
-          <UserButton afterSignOutUrl="/" />
+          <div className="flex flex-col items-start">
+            <UserButton afterSignOutUrl="/" />
+            <button
+              className="text-blue-500"
+              onClick={() => {
+                migrate()
+                  .catch(() => {
+                    toast.error(`Failed to migrate`);
+                  });
+              }}
+            >
+              Migrate
+            </button>
+            <button
+              onClick={async () => {
+                await createUser({
+                  name: "Test",
+                });
+              }}
+            >
+              Create User
+            </button>
+            <button
+              onClick={() => {
+                createAccount({
+                  name: "TestAccount",
+                  currency: "USD",
+                })
+                  .catch(() => {
+                    toast.error(`Failed to create account`);
+                  });
+              }}
+            >
+              Create Account USD
+            </button>
+            <button
+              onClick={() => {
+                addAdmin({
+                  accountId: 1,
+                  userId: 1,
+                })
+                  .catch(() => {
+                    toast.error(`Failed to add user to account admins`);
+                  });
+
+              }}
+            >
+              Add Admin
+            </button>
+            <button
+              onClick={() => {
+                createIncome({
+                  accountId: 1,
+                  name: "TestIncome",
+                  amount: 100,
+                  received: false,
+                })
+                  .catch(() => {
+                    toast.error(`Failed to create income`);
+                  });
+              }}
+            >
+              Add Income
+            </button>
+            <button
+              onClick={() => {
+                deleteIncome({
+                  id: 2
+                })
+                  .catch(() => {
+                    toast.error(`Failed to delete income`);
+                  });
+              }}
+            >
+              Delete Income
+            </button>
+          </div>
         )}
         {!session && (
           <div className="flex flex-col gap-2 p-2">
