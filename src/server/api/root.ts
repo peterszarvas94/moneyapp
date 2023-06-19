@@ -1,6 +1,5 @@
 import { migrationRouter } from "~/server/api/routers/migration";
 import { createTRPCRouter } from "~/server/api/trpc";
-import { usersRouter } from "./routers/users";
 import { accountsRouter } from "./routers/accounts";
 
 /**
@@ -10,7 +9,6 @@ import { accountsRouter } from "./routers/accounts";
  */
 export const appRouter = createTRPCRouter({
   migration: migrationRouter,
-  users: usersRouter,
   accounts: accountsRouter,
 });
 
