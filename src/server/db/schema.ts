@@ -1,160 +1,58 @@
-import { relations } from 'drizzle-orm';
-import { boolean, integer, pgTable, primaryKey, serial, varchar } from 'drizzle-orm/pg-core';
-
-// users who register to the site
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 256 }),
-});
-
-export const userRelations = relations(users, ({ many }) => ({
-  accountAdmins: many(accountAdmins),
-  accountViewers: many(accountViewers),
-  payees: many(payees),
-}));
+import { InferModel } from 'drizzle-orm';
+import { boolean, date, integer, pgTable, serial, varchar } from 'drizzle-orm/pg-core';
 
 // accounts which can hold incomes and expenses
 export const accounts = pgTable('accounts', {
   id: serial('id').primaryKey(),
-  name: varchar('name', { length: 256 }),
-  currency: varchar('currency', { length: 256 }),
+  name: varchar('name', { length: 256 }).notNull(),
+  description: varchar('description', { length: 256 }),
+  currency: varchar('currency', { length: 256 }).notNull(),
+  admins: varchar('admins', { length: 256 }).array(),
+  viewers: varchar('viewers', { length: 256 }).array(),
+  created_at: date('created_at').notNull().defaultNow(),
+  updated_at: date('updated_at').notNull().defaultNow()
 });
 
-export const accountRelations = relations(accounts, ({ many }) => ({
-  accountAdmins: many(accountAdmins),
-  incomes: many(incomes),
-  expenses: many(expenses),
-}));
+export type Account = InferModel<typeof accounts>;
 
-// join accounts and users to define account admins
-export const accountAdmins = pgTable('account_admins', {
-  userId: integer('user_id').notNull().references(() => users.id),
-  accountId: integer('account_id').notNull().references(() => accounts.id),
-}, (t) => ({
-  pk: primaryKey(t.userId, t.accountId),
-}));
-
-export const accountAdminRelations = relations(accountAdmins, ({ one }) => ({
-  user: one(users, {
-    fields: [accountAdmins.userId],
-    references: [users.id],
-  }),
-  account: one(accounts, {
-    fields: [accountAdmins.accountId],
-    references: [accounts.id],
-  }),
-}));
-
-// join accounts and users to define account viewers
-export const accountViewers = pgTable('account_viewers', {
-  userId: integer('user_id').notNull().references(() => users.id),
-  accountId: integer('account_id').notNull().references(() => accounts.id),
-}, (t) => ({
-  pk: primaryKey(t.userId, t.accountId),
-}));
-
-export const accountViewerRelations = relations(accountViewers, ({ one }) => ({
-  user: one(users, {
-    fields: [accountViewers.userId],
-    references: [users.id],
-  }),
-  account: one(accounts, {
-    fields: [accountViewers.accountId],
-    references: [accounts.id],
-  }),
-}));
-
-// incomes
-export const incomes = pgTable('incomes', {
+// incomes and expenses
+export const transactions = pgTable('transactions', {
   id: serial('id').primaryKey(),
-  name: varchar('name', { length: 256 }),
-  amount: integer('amount'),
-  received: boolean('received'),
-  accountId: integer('account_id').notNull().references(() => accounts.id),
+  account_id: integer('account_id').references(() => accounts.id).notNull(),
+  amount: integer('amount').notNull().default(0),
+  name: varchar('name', { length: 256 }).notNull(),
+  description: varchar('description', { length: 256 }),
+  type: varchar('category', { length: 256, enum: ['income', 'expense'], }).notNull(),
+  paid: boolean('paid').notNull().default(false),
+  paid_date: date('paid_date'),
+  partner: integer('payee_id').references(() => partners.id).notNull(),
+  created_at: date('created_at').notNull().defaultNow(),
+  updated_at: date('updated_at').notNull().defaultNow()
 });
 
-export const incomeRelations = relations(incomes, ({ one, many }) => ({
-  account: one(accounts, {
-    fields: [incomes.accountId],
-    references: [accounts.id],
-  }),
-  payments: many(payments),
-  reserves: one(reserves),
-}));
+export type Transaction = InferModel<typeof transactions>;
 
-// expenses
-export const expenses = pgTable('expenses', {
+// events which you can add transactions to
+export const events = pgTable('events', {
   id: serial('id').primaryKey(),
-  name: varchar('name', { length: 256 }),
-  amount: integer('amount'),
-  paid: boolean('paid'),
-  accountId: integer('account_id').notNull().references(() => accounts.id),
+  account_id: integer('account_id').references(() => accounts.id).notNull(),
+  name: varchar('name', { length: 256 }).notNull(),
+  description: varchar('description', { length: 256 }),
+  event_date: date('event_date'),
+  transactions: integer('transactions').references(() => transactions.id).array(),
+  created_at: date('created_at').notNull().defaultNow(),
+  updated_at: date('updated_at').notNull().defaultNow()
 });
 
-export const expenseRelations = relations(expenses, ({ one }) => ({
-  account: one(accounts, {
-    fields: [expenses.accountId],
-    references: [accounts.id],
-  }),
-}));
+export type Event = InferModel<typeof events>;
 
-// payments, parts of the income to pay out to payees
-export const payments = pgTable('payments', {
+// partners for transactions, sender or receiver
+export const partners = pgTable('partners', {
   id: serial('id').primaryKey(),
-  paid: boolean('paid'),
-  incomeId: integer('income_id').notNull().references(() => incomes.id),
+  name: varchar('name', { length: 256 }).notNull(),
+  clerk_id: varchar('clerk_id', { length: 256 }),
+  created_at: date('created_at').notNull().defaultNow(),
+  updated_at: date('updated_at').notNull().defaultNow()
 });
 
-export const paymentRelations = relations(payments, ({ one, many }) => ({
-  income: one(incomes, {
-    fields: [payments.incomeId],
-    references: [incomes.id],
-  }),
-  payee: one(payees),
-  components: many(components),
-}));
-
-// components of the payments
-export const components = pgTable('components', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 256 }),
-  amount: integer('amount'),
-  paymentId: integer('payment_id').notNull().references(() => payments.id),
-});
-
-export const componentRelations = relations(components, ({ one }) => ({
-  payment: one(payments)
-}));
-
-// payees, people who receive payments
-export const payees = pgTable('payees', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 256 }),
-  userId: integer('user_id').notNull().references(() => users.id),
-  paymentId: integer('payment_id').notNull().references(() => payments.id),
-});
-
-export const payeeRelations = relations(payees, ({ one }) => ({
-  user: one(users, {
-    fields: [payees.userId],
-    references: [users.id],
-  }),
-  payments: one(payments, {
-    fields: [payees.paymentId],
-    references: [payments.id],
-  }),
-}));
-
-// reserve part from the income for future use
-export const reserves = pgTable('reserves', {
-  id: serial('id').primaryKey(),
-  incomeId: integer('income_id').notNull().references(() => incomes.id),
-});
-
-export const reserveRelations = relations(reserves, ({ one }) => ({
-  income: one(incomes, {
-    fields: [reserves.incomeId],
-    references: [incomes.id],
-  }),
-}));
-
+export type Partner = InferModel<typeof partners>;
