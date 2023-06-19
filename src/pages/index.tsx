@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/nextjs";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
 
 const Home: NextPage = () => {
 
@@ -29,8 +30,12 @@ const Home: NextPage = () => {
             className="flex flex-col items-start"
           >
             <button
-              onClick={() => {
-                signOut();
+              onClick={async () => {
+                try {
+                  await signOut();
+                } catch {
+                  toast.error("Failed to sign out");
+                }
               }}
             >
               Sign Out
