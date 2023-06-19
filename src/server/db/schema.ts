@@ -1,4 +1,4 @@
-import { InferModel } from 'drizzle-orm';
+import type { InferModel } from 'drizzle-orm';
 import { boolean, date, integer, pgTable, serial, varchar } from 'drizzle-orm/pg-core';
 
 // accounts which can hold incomes and expenses

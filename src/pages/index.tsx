@@ -30,12 +30,11 @@ const Home: NextPage = () => {
             className="flex flex-col items-start"
           >
             <button
-              onClick={async () => {
-                try {
-                  await signOut();
-                } catch {
-                  toast.error("Failed to sign out");
-                }
+              onClick={() => {
+                signOut()
+                  .catch(() => {
+                    toast.error("Failed to sign out");
+                  });
               }}
             >
               Sign Out
