@@ -2,12 +2,12 @@ import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/ap
 
 export const testRouter = createTRPCRouter({
   publicTest: publicProcedure
-    .mutation(async ({ ctx }) => {
+    .mutation(({ ctx }) => {
       console.log(ctx);
     }),
 
   privateTest: privateProcedure
-    .mutation(async ({ ctx }) => {
+    .mutation(({ ctx }) => {
       console.log(ctx);
     }),
 });
