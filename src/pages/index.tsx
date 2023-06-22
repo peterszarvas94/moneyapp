@@ -3,10 +3,13 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import { api } from "~/utils/api";
 
 const Home: NextPage = () => {
 
   const { signOut, isSignedIn } = useAuth();
+  const { mutateAsync: mutatePublic } = api.test.publicTest.useMutation();
+  const { mutateAsync: mutatePrivate } = api.test.privateTest.useMutation();
 
   return (
     <>
@@ -16,19 +19,10 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <h1>
-          this is the homepage of LLAA
-        </h1>
-        {!isSignedIn ? (
-          <Link
-            href="/sign-in"
-          >
-            Sign In
-          </Link>
-        ) : (
-          <div
-            className="flex flex-col items-start"
-          >
+
+        <div className="flex flex-col items-start">
+
+          {isSignedIn ? (
             <button
               onClick={() => {
                 signOut()
@@ -39,15 +33,44 @@ const Home: NextPage = () => {
             >
               Sign Out
             </button>
-
+          ) : (
             <Link
-              href="/dashboard"
+              href="/sign-in"
             >
-              Dashboard
+              Sign in
             </Link>
-          </div>
+          )}
 
-        )}
+          <button
+            onClick={() => {
+              mutatePublic()
+                .then(() => {
+                  toast.success("Success");
+                })
+                .catch(() => {
+                  toast.error("Failed");
+                });
+            }}
+          >
+            Test Public
+          </button>
+
+
+          <button
+            onClick={() => {
+              mutatePrivate()
+                .then(() => {
+                  toast.success("Success");
+                })
+                .catch(() => {
+                  toast.error("Failed");
+                });
+            }}
+          >
+            Test Private
+          </button>
+
+        </div>
       </main>
     </>
   );
