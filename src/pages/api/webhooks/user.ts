@@ -1,5 +1,5 @@
 import type { WebhookEvent } from "@clerk/nextjs/dist/types/server";
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { vanillaApi } from "~/utils/api";
 
 // TODO: this needs to be verified with Svix
@@ -72,4 +72,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   res.status(200);
-};
+}
