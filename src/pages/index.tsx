@@ -8,8 +8,7 @@ import { api } from "~/utils/api";
 const Home: NextPage = () => {
 
   const { signOut, isSignedIn } = useAuth();
-  const { mutateAsync: mutatePublic } = api.test.publicTest.useMutation();
-  const { mutateAsync: mutatePrivate } = api.test.privateTest.useMutation();
+  const { mutateAsync: newUser } = api.user.new.useMutation();
 
   return (
     <>
@@ -19,9 +18,7 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-
         <div className="flex flex-col items-start">
-
           {isSignedIn ? (
             <button
               onClick={() => {
@@ -40,36 +37,23 @@ const Home: NextPage = () => {
               Sign in
             </Link>
           )}
-
           <button
             onClick={() => {
-              mutatePublic()
+              newUser({
+                name: "Test User",
+                email: "test@email.com",
+                clerkId: "ck_test",
+              })
                 .then(() => {
-                  toast.success("Success");
+                  toast.success("New user created");
                 })
                 .catch(() => {
-                  toast.error("Failed");
+                  toast.error("Failed to create new user");
                 });
             }}
           >
-            Test Public
+            New User
           </button>
-
-
-          <button
-            onClick={() => {
-              mutatePrivate()
-                .then(() => {
-                  toast.success("Success");
-                })
-                .catch(() => {
-                  toast.error("Failed");
-                });
-            }}
-          >
-            Test Private
-          </button>
-
         </div>
       </main>
     </>

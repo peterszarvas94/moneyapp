@@ -8,7 +8,8 @@
     "lint": "next lint",
     "start": "next start",
     "gen": "drizzle-kit generate:pg --config drizzle.config.ts",
-    "drop": "drizzle-kit drop --config drizzle.config.ts"
+    "drop": "drizzle-kit drop --config drizzle.config.ts",
+    "proxy": "ngrok http 3000"
   },
   "dependencies": {
     "@clerk/nextjs": "^4.20.0",
