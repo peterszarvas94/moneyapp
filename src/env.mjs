@@ -1,4 +1,5 @@
-import { createEnv } from "@t3-oss/env-nextjs";
+import { createEnv } from "@t3-oss/env-nextjs"
+
 import { z } from "zod";
 
 export const env = createEnv({
@@ -8,10 +9,6 @@ export const env = createEnv({
    */
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
-    PGHOST: z.string(),
-    PGDATABASE: z.string(),
-    PGUSER: z.string(),
-    PGPASSWORD: z.string(),
   },
 
   /**
@@ -29,10 +26,6 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
-    PGHOST: process.env.PGHOST,
-    PGDATABASE: process.env.PGDATABASE,
-    PGUSER: process.env.PGUSER,
-    PGPASSWORD: process.env.PGPASSWORD,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

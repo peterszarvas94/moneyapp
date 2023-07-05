@@ -9,6 +9,7 @@ const Home: NextPage = () => {
 
   const { signOut, isSignedIn } = useAuth();
   const { mutateAsync: newUser } = api.user.new.useMutation();
+  const { mutateAsync: getUser } = api.user.getFromId.useMutation();
 
   return (
     <>
@@ -19,40 +20,66 @@ const Home: NextPage = () => {
       </Head>
       <main>
         <div className="flex flex-col items-start">
+          <h1 className='text-3xl'>This is Homepage</h1>
           {isSignedIn ? (
-            <button
-              onClick={() => {
-                signOut()
-                  .catch(() => {
-                    toast.error("Failed to sign out");
-                  });
-              }}
-            >
-              Sign Out
-            </button>
+            <>
+              <button
+                className='underline'
+                onClick={() => {
+                  signOut()
+                    .catch(() => {
+                      toast.error("Failed to sign out");
+                    });
+                }}
+              >
+                Sign Out
+              </button>
+              <Link
+                href="/dashboard"
+                className='underline'
+              >
+                Dashboard
+              </Link>
+            </>
           ) : (
             <Link
               href="/sign-in"
+              className='underline'
             >
               Sign in
             </Link>
           )}
           <button
-            onClick={() => {
-              newUser({
-                name: "Test User",
-                email: "test@email.com",
-                clerkId: "ck_test",
-              })
-                .then(() => {
-                  toast.success("New user created");
+            className='underline'
+            onClick={async () => {
+              try {
+                const res = await newUser({
+                  name: "Test User",
+                  email: "test@email.com",
+                  clerkId: "ck_test",
                 })
-                .catch(() => {
-                  toast.error("Failed to create new user");
-                });
+                toast.success(`User is created: ${res.name}`);
+              } catch {
+                toast.error(`Can not create user`);
+              }
             }}
           >
             New User
+          </button>
+          <button
+            className='underline'
+            onClick={async () => {
+              try {
+                const res = await getUser({
+                  id: 13
+                })
+                toast.success(`User name is: ${res.name}`);
+              } catch {
+                toast.error("User 14 is not found");
+              }
+            }}
+          >
+            Get User 14
           </button>
         </div>
       </main>

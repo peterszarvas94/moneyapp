@@ -1,10 +1,20 @@
-import type { NextPage } from "next"
-import { UserButton } from "@clerk/nextjs"
+import { UserButton } from "@clerk/nextjs";
+import { NextPage } from "next";
+import Link from "next/link";
 
-const Dashboard: NextPage = () => {
+const DashBoard: NextPage = () => {
   return (
-    <UserButton />
+    <div>
+      <h1 className='text-3xl'>This is Dashboard</h1>
+      <Link
+        href='/'
+        className='underline'
+      >
+        Back to home
+      </Link>
+      <UserButton />
+    </div>
   )
 }
 
-export default Dashboard
+export default DashBoard;
