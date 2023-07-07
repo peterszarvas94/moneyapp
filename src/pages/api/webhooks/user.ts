@@ -5,6 +5,9 @@ import { vanillaApi } from "~/utils/api";
 // TODO: this needs to be verified with Svix
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const event = req.body as WebhookEvent;
+
+  console.log('WEBHOOK', event)
+
   if (event.type === "user.created") {
     const { first_name, last_name, email_addresses, primary_email_address_id, id: clerkId } = event.data;
     const name = `${first_name} ${last_name}`;

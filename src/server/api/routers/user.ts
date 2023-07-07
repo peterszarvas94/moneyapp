@@ -10,7 +10,7 @@ export const userRouter = createTRPCRouter({
     .input(z.object({
       id: z.number()
     }))
-    .mutation(({input, ctx}) => {
+    .mutation(({ input, ctx }) => {
       const mutation = ctx.db.select().from(users).where(eq(users.id, input.id));
       const res = mutation.get();
 
@@ -19,7 +19,7 @@ export const userRouter = createTRPCRouter({
           code: "NOT_FOUND",
         })
       }
-      
+
       return res;
     }),
 
@@ -42,9 +42,9 @@ export const userRouter = createTRPCRouter({
       if (res === undefined) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-        })      
+        })
       }
-      
+
       return res;
     }),
 
@@ -55,13 +55,23 @@ export const userRouter = createTRPCRouter({
       clerkId: z.string(),
     }))
     .mutation(({ input, ctx }) => {
-      ctx.db
+      const mutation = ctx.db
         .update(users)
         .set({
           name: input.name,
           email: input.email,
         })
         .where(eq(users.clerkId, input.clerkId))
+        .returning()
+
+      const res = mutation.get();
+      if (res === undefined) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR"
+        })
+      }
+
+      return res;
     }),
 
   delete: publicProcedure
@@ -69,9 +79,19 @@ export const userRouter = createTRPCRouter({
       clerkId: z.string(),
     }))
     .mutation(({ input, ctx }) => {
-      ctx.db
+      const mutation = ctx.db
         .delete(users)
         .where(eq(users.clerkId, input.clerkId))
+        .returning()
+
+      const res = mutation.get()
+      if (res === undefined) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR"
+        })
+      }
+
+      return res;
     }),
 
-});
+})
