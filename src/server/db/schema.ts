@@ -3,9 +3,9 @@ import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey(),
-  name: text('name'),
-  email: text('email'),
-  clerkId: text('clerk_id')
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  clerkId: text('clerk_id').notNull()
 })
 
 export type NewUser = InferModel<typeof users, 'insert'>
@@ -14,30 +14,30 @@ export const userRelations = relations(users, ({ many }) => ({
   accountAdmins: many(accountAdmins),
 }))
 
-export const account = sqliteTable('accounts', {
+export const accounts = sqliteTable('accounts', {
   id: integer('id').primaryKey(),
-  name: text('name'),
+  name: text('name').notNull(),
   description: text('description'),
 })
 
-export type NewAccount = InferModel<typeof account, 'insert'>
+export type NewAccount = InferModel<typeof accounts, 'insert'>
 
-export const accountRelations = relations(account, ({ many }) => ({
+export const accountRelations = relations(accounts, ({ many }) => ({
   accountAdmins: many(accountAdmins),
 }))
 
 export const accountAdmins = sqliteTable('account_admins', {
   adminId: integer('admin_id').notNull().references(() => users.id),
-  accountId: integer('account_id').notNull().references(() => account.id),
+  accountId: integer('account_id').notNull().references(() => accounts.id),
 }, (t) => ({
     pk: primaryKey(t.adminId, t.accountId)
   })
 )
 
 export const accountAdminsRelations = relations(accountAdmins, ({ one }) => ({
-  account: one(account, {
+  account: one(accounts, {
     fields: [accountAdmins.accountId],
-    references: [account.id],
+    references: [accounts.id],
   }),
   admin: one(users, {
     fields: [accountAdmins.adminId],

@@ -1,9 +1,9 @@
-import { UserButton } from "@clerk/nextjs";
 import { NextPage } from "next";
 import Head from "next/head";
+import Link from "next/link";
 import DashBoardNav from "~/components/DashBoardNav";
 
-const DashBoard: NextPage = () => {
+const Accounts: NextPage = () => {
   return (
     <>
       <Head>
@@ -13,10 +13,17 @@ const DashBoard: NextPage = () => {
       </Head>
       <main>
         <div>
-          <h1 className='text-3xl'>This is Dashboard</h1>
+          <h1 className='text-3xl'>This is Accounts</h1>
+
           <DashBoardNav />
+
           <div className='flex flex-col pt-6'>
-            <UserButton />
+            <Link
+              href='/dashboard/accounts/new'
+              className='underline'
+            >
+              New account
+            </Link>
           </div>
         </div>
       </main>
@@ -24,4 +31,4 @@ const DashBoard: NextPage = () => {
   )
 }
 
-export default DashBoard;
+export default Accounts;
