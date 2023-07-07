@@ -6,7 +6,6 @@ export default authMiddleware({
     "/",
     "/(api|trpc)(.*)",
     "/api/webhooks/user",
-    "/migrate",
   ]
 });
 

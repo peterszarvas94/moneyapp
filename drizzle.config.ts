@@ -5,8 +5,9 @@ dotenv.config();
 export default {
   schema: 'src/server/db/schema.ts',
   out: 'src/server/db/migrations',
-  driver: "better-sqlite",
+  driver: "turso",
   dbCredentials: {
-    url: 'sqlite.db'
+    url: process.env.DB_URL!,
+    authToken: process.env.DB_TOKEN
   }
 } satisfies Config;

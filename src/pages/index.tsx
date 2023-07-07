@@ -71,7 +71,7 @@ const Home: NextPage = () => {
             onClick={async () => {
               try {
                 const res = await getUser({
-                  id: 13
+                  id: 14
                 })
                 toast.success(`User name is: ${res.name}`);
               } catch {
