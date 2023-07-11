@@ -1,16 +1,22 @@
 import type { NewUser } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/api/trpc";
 import { users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 
 export const userRouter = createTRPCRouter({
-  getFromId: publicProcedure
+  get: privateProcedure
     .input(z.object({
-      id: z.number()
+      id: z.number().optional()
     }))
-    .mutation(({ input, ctx }) => {
+    .query(({ input, ctx }) => {
+      if (input.id === undefined) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+        })
+      }
+
       const mutation = ctx.db.select().from(users).where(eq(users.id, input.id));
       const res = mutation.get();
 
@@ -22,6 +28,30 @@ export const userRouter = createTRPCRouter({
 
       return res;
     }),
+
+  getByClerkId: privateProcedure
+    .input(z.object({
+      clerkId: z.string().optional()
+    }))
+    .query(({ input, ctx }) => {
+      if (input.clerkId === undefined) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+        })
+      }
+
+      const mutation = ctx.db.select().from(users).where(eq(users.clerkId, input.clerkId));
+      const res = mutation.get();
+
+      if (res === undefined) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+        })
+      }
+
+      return res;
+    }),
+
 
   new: publicProcedure
     .input(z.object({

@@ -4,19 +4,53 @@ import DashBoardNav from "~/components/DashBoardNav";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { api } from "~/utils/api";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/router";
 
 function NewAccount() {
-  const { register, handleSubmit, formState: {} } = useForm<NewAccount>();
+  const { register, handleSubmit, formState: { } } = useForm<NewAccount>();
 
+  const { user } = useUser();
   const { mutateAsync: newAccount } = api.account.new.useMutation();
+  const { mutateAsync: newAccountAdmin } = api.accountAdmin.new.useMutation();
+  const { data: currentUser } = api.user.getByClerkId.useQuery({ clerkId: user?.id });
+
+  const router = useRouter();
 
   const onSubmit: SubmitHandler<NewAccount> = async (data: NewAccount) => {
+    let createdAccount;
+
     try {
-      await newAccount(data);
+      createdAccount = await newAccount(data);
     } catch (error) {
       toast.error("Failed to create account");
-      console.error(error);
+      return;
     }
+
+    if (user === null || user === undefined) {
+      toast.error("Log in to add account Admin");
+      return;
+    }
+
+    if (currentUser === undefined) {
+      toast.error("You need to login");
+      return;
+    }
+        
+    try {
+      await newAccountAdmin({
+        accountId: createdAccount.id,
+        adminId: currentUser.id
+      });
+    } catch (error) {
+      toast.error("Failed to add account Admin");
+      console.log(error);
+      return;
+    }
+
+    toast.success("Account created");
+
+    router.push("/dashboard/accounts");
   }
 
   return (

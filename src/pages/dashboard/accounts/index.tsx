@@ -1,9 +1,16 @@
+import { useUser } from "@clerk/nextjs";
 import { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
 import DashBoardNav from "~/components/DashBoardNav";
+import { api } from "~/utils/api";
 
 const Accounts: NextPage = () => {
+
+  const { user } = useUser();
+  const { data: userId } = api.user.getByClerkId.useQuery({ clerkId: user?.id });
+  const { data: accounts } = api.accountAdmin.getAccountsByAdminId.useQuery({ adminId: userId?.id });
+
   return (
     <>
       <Head>
@@ -24,6 +31,13 @@ const Accounts: NextPage = () => {
             >
               New account
             </Link>
+            <ul>
+              {accounts?.map((account) => (
+                <li key={account.account.id}>
+                  {account.account.name}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </main>
