@@ -8,6 +8,7 @@ export const users = sqliteTable('users', {
   clerkId: text('clerk_id').notNull()
 })
 
+export type User = InferModel<typeof users, 'select'>
 export type NewUser = InferModel<typeof users, 'insert'>
 
 export const userRelations = relations(users, ({ many }) => ({
@@ -20,7 +21,13 @@ export const accounts = sqliteTable('accounts', {
   description: text('description'),
 })
 
+export type Account = InferModel<typeof accounts, 'select'>
 export type NewAccount = InferModel<typeof accounts, 'insert'>
+export type UpdateAccount = {
+  id?: number,
+  name?: string,
+  description?: string | null,
+}
 
 export const accountRelations = relations(accounts, ({ many }) => ({
   accountAdmins: many(accountAdmins),

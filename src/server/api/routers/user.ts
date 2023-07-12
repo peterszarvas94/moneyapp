@@ -1,4 +1,4 @@
-import type { NewUser } from "~/server/db/schema";
+import type { NewUser, User } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/api/trpc";
@@ -10,48 +10,81 @@ export const userRouter = createTRPCRouter({
     .input(z.object({
       id: z.number().optional()
     }))
-    .query(({ input, ctx }) => {
+    .query(async ({ input, ctx }) => {
       if (input.id === undefined) {
         throw new TRPCError({
-          code: "NOT_FOUND",
+          code: "BAD_REQUEST",
+          message: "User ID is not defined",
         })
       }
 
-      const mutation = ctx.db.select().from(users).where(eq(users.id, input.id));
-      const res = mutation.get();
-
-      if (res === undefined) {
+      let user: User | undefined;
+      try {
+        user = await ctx.db.query.users.findFirst({
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+            clerkId: true,
+          },
+          where: eq(users.id, input.id),
+        });
+      } catch (e) {
         throw new TRPCError({
           code: "NOT_FOUND",
+          message: "User not found",
         })
       }
 
-      return res;
+      if (user === undefined) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        })
+      }
+
+      return user;
     }),
 
   getByClerkId: privateProcedure
     .input(z.object({
       clerkId: z.string().optional()
     }))
-    .query(({ input, ctx }) => {
+    .query(async ({ input, ctx }) => {
       if (input.clerkId === undefined) {
         throw new TRPCError({
-          code: "NOT_FOUND",
+          code: "BAD_REQUEST",
+          message: "User\'s clerkId is not defined",
         })
       }
 
-      const mutation = ctx.db.select().from(users).where(eq(users.clerkId, input.clerkId));
-      const res = mutation.get();
-
-      if (res === undefined) {
+      let user: User | undefined;
+      try {
+        user = await ctx.db.query.users.findFirst({
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+            clerkId: true,
+          },
+          where: eq(users.clerkId, input.clerkId),
+        });
+      } catch (e) {
         throw new TRPCError({
           code: "NOT_FOUND",
+          message: "User not found",
         })
       }
 
-      return res;
-    }),
+      if (user === undefined) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        })
+      }
 
+      return user;
+    }),
 
   new: publicProcedure
     .input(z.object({

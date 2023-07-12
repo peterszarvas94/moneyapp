@@ -8,8 +8,9 @@ import { api } from "~/utils/api";
 const Accounts: NextPage = () => {
 
   const { user } = useUser();
-  const { data: userId } = api.user.getByClerkId.useQuery({ clerkId: user?.id });
-  const { data: accounts } = api.accountAdmin.getAccountsByAdminId.useQuery({ adminId: userId?.id });
+  const { data: adminAccounts } = api.accountAdmin.getAccountsForAdminByClerkId.useQuery({
+    clerkId: user?.id
+  });
 
   return (
     <>
@@ -24,17 +25,25 @@ const Accounts: NextPage = () => {
 
           <DashBoardNav />
 
-          <div className='flex flex-col pt-6'>
+          <div className='flex flex-col pt-6 gap-2'>
             <Link
               href='/dashboard/accounts/new'
               className='underline'
             >
               New account
             </Link>
+            <div>
+              My administrated accounts:
+            </div>
             <ul>
-              {accounts?.map((account) => (
-                <li key={account.account.id}>
-                  {account.account.name}
+              {adminAccounts?.map((account) => (
+                <li key={account.id}>
+                  <Link
+                    href={`/dashboard/accounts/${account.id}`}
+                    className='underline'
+                  >
+                    {account.name}
+                  </Link>
                 </li>
               ))}
             </ul>
