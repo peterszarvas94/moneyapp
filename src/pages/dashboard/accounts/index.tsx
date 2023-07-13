@@ -1,8 +1,9 @@
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
 import DashBoardNav from "~/components/DashBoardNav";
 import Redirect from "~/components/Redirect";
+import Spinner from "~/components/Spinner";
 import useCheckUserLoaded from "~/hooks/useCheckUserLoaded";
 import { api } from "~/utils/api";
 
@@ -10,9 +11,7 @@ const Accounts: NextPage = () => {
   const { user, checked } = useCheckUserLoaded();
   if (!checked) {
     return (
-      <div>
-        Loading...
-      </div>
+      <Spinner />
     );
   }
   if (!user) {
@@ -21,7 +20,7 @@ const Accounts: NextPage = () => {
     );
   }
   return (
-    <UserIsLoaded clerkId={user.id}/>
+    <UserIsLoaded clerkId={user.id} />
   )
 }
 
@@ -32,6 +31,12 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
   const { data: adminAccounts } = api.accountAdmin.getAccountsForAdminByClerkId.useQuery({
     clerkId
   });
+
+  if (!adminAccounts) {
+    return (
+      <Spinner />
+    );
+  }
 
   return (
     <>
@@ -53,11 +58,17 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
             >
               New account
             </Link>
-            <div>
-              My administrated accounts:
-            </div>
+            {adminAccounts.length === 0 ? (
+              <div className="pt-4">
+                You are not administrating any accounts.
+              </div>
+            ) : (
+              <div className="pt-4">
+                My administrated accounts:
+              </div>
+            )}
             <ul>
-              {adminAccounts?.map((account) => (
+              {adminAccounts.map((account) => (
                 <li key={account.id}>
                   <Link
                     href={`/dashboard/accounts/${account.id}`}

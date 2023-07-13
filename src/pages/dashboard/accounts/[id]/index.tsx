@@ -8,6 +8,9 @@ import Redirect from "~/components/Redirect";
 import DashBoardNav from "~/components/DashBoardNav";
 import { useRouter } from "next/router";
 import { api } from "~/utils/api";
+import Spinner from "~/components/Spinner";
+import { toast } from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 
 const AccountPage: NextPage = () => {
   const router = useRouter();
@@ -22,9 +25,7 @@ const AccountPage: NextPage = () => {
       </Head>
       <main>
         {!parsedId ? (
-          <div>
-            Loading...
-          </div>
+          <Spinner />
         ) : (
           <IdIsParsed id={parsedId} />
         )}
@@ -32,7 +33,6 @@ const AccountPage: NextPage = () => {
     </>
   );
 }
-export default AccountPage;
 
 interface IdIsParsedProps {
   id: number;
@@ -42,9 +42,7 @@ function IdIsParsed({ id }: IdIsParsedProps) {
   return (
     <>
       {!checked ? (
-        <div>
-          Checking Access...
-        </div>
+        <Spinner />
       ) : (
         <AccessIsChecked access={access} id={id} />
       )}
@@ -73,13 +71,28 @@ interface AdminAccountContentProps {
 }
 function AdminAccountContent({ id }: AdminAccountContentProps) {
   const { data: account } = api.account.get.useQuery({ id });
+  const { mutateAsync: deleteAccountAdmin } = api.accountAdmin.delete.useMutation();
+  const { mutateAsync: deleteAccount } = api.account.delete.useMutation();
+  const router = useRouter();
+  const { user } = useUser();
+
+  if (!user) {
+    return <Redirect url="/" />
+  }
+
+  if (!account) {
+    return (
+      <Spinner />
+    )
+  }
+
   return (
     <>
       <h1 className='text-3xl'>You are admin of Account {id}</h1>
       <DashBoardNav />
       <ul className="pt-6">
-        <li>Name: {account?.name}</li>
-        <li>Description: {account?.description}</li>
+        <li>Name: {account.name}</li>
+        <li>Description: {account.description}</li>
         <li>
           <Link
             href={`/dashboard/accounts/${id}/edit`}
@@ -88,7 +101,38 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
             Edit
           </Link>
         </li>
+        <li>
+          <button
+            className="underline"
+            onClick={async () => {
+              if (confirm("Are you sure?")) {
+                try {
+                  await deleteAccountAdmin({
+                    clerkId: user.id,
+                    accountId: id,
+                  })
+                } catch (e) {
+                  return;
+                }
+
+                try {
+                  const success = await deleteAccount({ id })
+                  if (success) {
+                    toast.success("Account deleted");
+                    router.push("/dashboard/accounts");
+                  }
+                } catch (e) {
+                  return;
+                }
+              }
+            }}
+          >
+            Delete
+          </button>
+        </li>
       </ul>
     </>
   )
 }
+
+export default AccountPage;

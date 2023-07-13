@@ -7,6 +7,10 @@ import Redirect from "~/components/Redirect";
 import DashBoardNav from "~/components/DashBoardNav";
 import { useRouter } from "next/router";
 import { api } from "~/utils/api";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { Account, UpdateAccount } from "~/server/db/schema";
+import Spinner from "~/components/Spinner";
+import { toast } from "react-hot-toast";
 
 const EditAccountPage: NextPage = () => {
   const router = useRouter();
@@ -22,7 +26,7 @@ const EditAccountPage: NextPage = () => {
       <main>
         {!parsedId ? (
           <div>
-            Loading...
+            <Spinner /> 
           </div>
         ) : (
           <IdIsParsed id={parsedId} />
@@ -31,7 +35,6 @@ const EditAccountPage: NextPage = () => {
     </>
   );
 }
-export default EditAccountPage;
 
 interface IdIsParsedProps {
   id: number;
@@ -41,9 +44,7 @@ function IdIsParsed({ id }: IdIsParsedProps) {
   return (
     <>
       {!checked ? (
-        <div>
-          Checking Access...
-        </div>
+        <Spinner />
       ) : (
         <AccessIsChecked access={access} id={id} />
       )}
@@ -76,11 +77,60 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
     <>
       <h1 className='text-3xl'>Edit Account {id}</h1>
       <DashBoardNav />
-      <ul className="pt-6">
-        <li>Name: {account?.name}</li>
-        <li>Description: {account?.description}</li>
-      </ul>
-      <div>Form</div>
+      {!account ? (
+        <Spinner />
+      ) : (
+        <AccountIsLoaded account={account} />
+      )}
     </>
   )
 }
+
+interface AccountIsLoadedProps {
+  account: Account;
+}
+function AccountIsLoaded({ account }: AccountIsLoadedProps) {
+  const { register, handleSubmit } = useForm<UpdateAccount>();
+  const { mutateAsync: editAccount } = api.account.edit.useMutation();
+  const router = useRouter();
+  const onSubmit: SubmitHandler<UpdateAccount> = async (data) => {
+    try {
+      await editAccount({ id: account.id, ...data });
+    } catch (e) {}
+
+    toast.success('Account updated');
+    router.push(`/dashboard/accounts/${account.id}`);
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col p-6'>
+      <label htmlFor='name'>Name</label>
+      <input
+        type='text'
+        id='name'
+        className='border-black border-2'
+        {...register('name', { required: true })}
+        required
+        defaultValue={account?.name}
+      />
+
+      <label htmlFor='description'>Description</label>
+      <input
+        type='text'
+        id='description'
+        className='border-black border-2'
+        {...register('description')}
+        defaultValue={account?.description ?? undefined}
+      />
+
+      <button
+        type='submit'
+        className='underline text-left'
+      >
+        Submit
+      </button>
+    </form>
+  )
+}
+
+export default EditAccountPage;

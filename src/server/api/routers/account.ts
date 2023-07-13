@@ -78,7 +78,6 @@ export const accountRouter = createTRPCRouter({
       description: z.string().optional().nullable(),
     }))
     .mutation(async ({ input, ctx }) => {
-
       let data: UpdateAccount = {};
       if (input.name !== undefined) {
         data.name = input.name;
@@ -105,11 +104,9 @@ export const accountRouter = createTRPCRouter({
     .input(z.object({
       id: z.number(),
     }))
-    .mutation(async ({ input, ctx }) => {
-      let account: Account | undefined;
+    .mutation(async ({ input, ctx }): Promise<true> => {
       try {
-        const mutation = ctx.db.delete(accounts).where(eq(accounts.id, input.id)).returning();
-        account = await mutation.get();
+        await ctx.db.delete(accounts).where(eq(accounts.id, input.id)).run();
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -117,13 +114,6 @@ export const accountRouter = createTRPCRouter({
         })
       }
 
-      if (account === undefined) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Account deletion failed",
-        })
-      }
-
-      return account;
+      return true;
     }),
 });

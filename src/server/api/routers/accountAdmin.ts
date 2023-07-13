@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { accountAdmins, users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export const accountAdminRouter = createTRPCRouter({
   new: privateProcedure
@@ -117,7 +117,7 @@ export const accountAdminRouter = createTRPCRouter({
       clerkId: z.string(),
       accountId: z.number(),
     }))
-    .mutation(async ({ input, ctx }): Promise<true> => {
+    .mutation(async ({ input, ctx }): Promise<AccountAdmin> => {
       // get user by clerk ID
       let user: { id: number } | undefined;
       try {
@@ -142,12 +142,15 @@ export const accountAdminRouter = createTRPCRouter({
       }
 
       // check if user is an admin of the account
-      let res: {} | undefined;
+      let res: AccountAdmin | undefined;
       try {
         res = await ctx.db.query.accountAdmins.findFirst({
-          columns: {},
+          columns: {
+            adminId: true,
+            accountId: true,
+          },
           where: eq(accountAdmins.adminId, user.id),
-        }).execute();
+        })
       } catch (e) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -159,6 +162,52 @@ export const accountAdminRouter = createTRPCRouter({
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "User is not an admin of this account",
+        })
+      }
+
+      return res;
+    }),
+
+  delete: privateProcedure
+    .input(z.object({
+      clerkId: z.string(),
+      accountId: z.number(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      // get user by clerk ID
+      let user: { id: number } | undefined;
+      try {
+        user = await ctx.db.query.users.findFirst({
+          columns: {
+            id: true,
+          },
+          where: eq(users.clerkId, input.clerkId),
+        });
+      } catch (e) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User can not be searched by clerk ID",
+        })
+      }
+
+      if (user === undefined) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found by clerk ID",
+        })
+      }
+      // delete account admin
+      try {
+        await ctx.db.delete(accountAdmins).where(
+          and(
+            eq(accountAdmins.adminId, user.id),
+            eq(accountAdmins.accountId, input.accountId),
+          )
+        ).run();
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete account admin",
         })
       }
 

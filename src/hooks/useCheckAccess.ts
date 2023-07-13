@@ -26,11 +26,13 @@ function useAccountAccessCheck({ accountId }: CheckAccessProps) {
         accountId,
         clerkId,
       });
-      if (res === true) {
+      if (res.accountId === accountId) {
         setAccess("admin");
         setChecked(true);
       }
-    } catch (e) { }
+    } catch (e) {
+      return;
+    }
   }
 
   return {
