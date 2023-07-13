@@ -1,4 +1,4 @@
-import type { Account, AccountAdmin, NewAccountAdmin } from "~/server/db/schema";
+import type { Account, AccountAdmin, NewAccountAdmin, User } from "~/server/db/schema";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { accountAdmins, users } from "~/server/db/schema";
@@ -60,7 +60,51 @@ export const accountAdminRouter = createTRPCRouter({
       return accountAdmin;
     }),
 
-  getAccountsForAdminByClerkId: privateProcedure
+  getAdminsForAccount: privateProcedure
+    .input(z.object({
+      accountId: z.number()
+    }))
+    .query(async ({ input, ctx }): Promise<User[]> =>{
+      let accounts: {
+        adminId: number;
+        accountId: number;
+        admin: {
+          id: number;
+          name: string;
+          email: string;
+          clerkId: string;
+        };
+      }[];
+      try {
+        accounts = await ctx.db.query.accountAdmins.findMany({
+          columns: {
+            accountId: true,
+            adminId: true,
+          },
+          where: eq(accountAdmins.accountId, input.accountId),
+          with: {
+            admin: {
+              columns: {
+                id: true,
+                name: true,
+                email: true,
+                clerkId: true,
+              }
+            }
+          }
+        }).execute();
+      } catch (e) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Account not found",
+        })
+      }
+  
+      const admins = accounts.map((a) => a.admin);
+      return admins;
+    }),
+
+  getAccountsForAdmin: privateProcedure
     .input(z.object({
       clerkId: z.string()
     }))
@@ -112,7 +156,7 @@ export const accountAdminRouter = createTRPCRouter({
       return accounts;
     }),
 
-  checkAdminAccessByClerkId: privateProcedure
+  checkAdminAccess: privateProcedure
     .input(z.object({
       clerkId: z.string(),
       accountId: z.number(),

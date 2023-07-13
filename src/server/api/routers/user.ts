@@ -86,6 +86,31 @@ export const userRouter = createTRPCRouter({
       return user;
     }),
 
+  getByEmail: privateProcedure
+    .input(z.object({
+      email: z.string()
+    }))
+    .mutation(async ({ input, ctx }) => {
+      let user: User | undefined;
+      try {
+        user = await ctx.db.query.users.findFirst({
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+            clerkId: true,
+          },
+          where: eq(users.email, input.email),
+        });
+        return user;
+      } catch (e) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        })
+      }
+    }),
+
   new: publicProcedure
     .input(z.object({
       name: z.string(),

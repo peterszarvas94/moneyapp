@@ -11,7 +11,7 @@ function useAccountAccessCheck({ accountId }: CheckAccessProps) {
   const [access, setAccess] = useState<Access>("denied");
   const [checked, setChecked] = useState<boolean>(false);
   const { user } = useUser();
-  const { mutateAsync: checkAdminAccess } = api.accountAdmin.checkAdminAccessByClerkId.useMutation();
+  const { mutateAsync: checkAdminAccess } = api.accountAdmin.checkAdminAccess.useMutation();
 
   useEffect(() => {
     if (!user) {
