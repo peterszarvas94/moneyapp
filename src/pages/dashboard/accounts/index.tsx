@@ -1,15 +1,36 @@
-import { useUser } from "@clerk/nextjs";
 import { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
 import DashBoardNav from "~/components/DashBoardNav";
+import Redirect from "~/components/Redirect";
+import useCheckUserLoaded from "~/hooks/useCheckUserLoaded";
 import { api } from "~/utils/api";
 
 const Accounts: NextPage = () => {
+  const { user, checked } = useCheckUserLoaded();
+  if (!checked) {
+    return (
+      <div>
+        Loading...
+      </div>
+    );
+  }
+  if (!user) {
+    return (
+      <Redirect url='/,' />
+    );
+  }
+  return (
+    <UserIsLoaded clerkId={user.id}/>
+  )
+}
 
-  const { user } = useUser();
+interface UserIsLoadedProps {
+  clerkId: string;
+}
+function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
   const { data: adminAccounts } = api.accountAdmin.getAccountsForAdminByClerkId.useQuery({
-    clerkId: user?.id
+    clerkId
   });
 
   return (

@@ -1,18 +1,26 @@
+import { useUser } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 import { api } from '~/utils/api';
 
-type Access = "admin" | "viewer" | null;
+export type Access = "admin" | "viewer" | "denied";
 
 interface CheckAccessProps {
-  accountId: number | undefined;
-  clerkId: string | undefined;
+  accountId: number;
 }
-
-function useCheckAccessToAccount({ accountId, clerkId }: CheckAccessProps) {
-  const [access, setAccess] = useState<Access>(null);
+function useAccountAccessCheck({ accountId }: CheckAccessProps) {
+  const [access, setAccess] = useState<Access>("denied");
+  const [checked, setChecked] = useState<boolean>(false);
+  const { user } = useUser();
   const { mutateAsync: checkAdminAccess } = api.accountAdmin.checkAdminAccessByClerkId.useMutation();
 
-  async function check() {
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    check({ accountId, clerkId: user.id });
+  }, [user]);
+
+  async function check({ accountId, clerkId }: { accountId: number, clerkId: string }) {
     try {
       const res = await checkAdminAccess({
         accountId,
@@ -20,18 +28,15 @@ function useCheckAccessToAccount({ accountId, clerkId }: CheckAccessProps) {
       });
       if (res === true) {
         setAccess("admin");
+        setChecked(true);
       }
-    } catch (e) {}
+    } catch (e) { }
   }
-
-  useEffect(() => {
-    check();
-  }, [accountId, clerkId]);
 
   return {
     access,
-    check,
+    checked
   };
 }
 
-export default useCheckAccessToAccount;
+export default useAccountAccessCheck;

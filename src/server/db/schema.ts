@@ -41,6 +41,7 @@ export const accountAdmins = sqliteTable('account_admins', {
   })
 )
 
+export type AccountAdmin = InferModel<typeof accountAdmins, 'select'>
 export type NewAccountAdmin = InferModel<typeof accountAdmins, 'insert'>
 
 export const accountAdminsRelations = relations(accountAdmins, ({ one }) => ({

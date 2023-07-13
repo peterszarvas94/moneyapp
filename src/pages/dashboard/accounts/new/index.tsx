@@ -1,55 +1,60 @@
-import type { NewAccount } from "~/server/db/schema";
+import type { Account, NewAccount as NewAccountType } from "~/server/db/schema";
+import type { NextPage } from "next";
 import Head from "next/head";
 import DashBoardNav from "~/components/DashBoardNav";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { api } from "~/utils/api";
-import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/router";
+import useCheckUserLoaded from "~/hooks/useCheckUserLoaded";
+import Redirect from "~/components/Redirect";
 
-function NewAccount() {
-  const { register, handleSubmit, formState: { } } = useForm<NewAccount>();
+const NewAccount: NextPage = () => {
+  const { user, checked } = useCheckUserLoaded();
+  if (!checked) {
+    return (
+      <div>
+        Loading...
+      </div>
+    );
+  }
+  if (!user) {
+    return (
+      <Redirect url='/,' />
+    );
+  }
+  return (
+    <UserIsLoaded clerkId={user.id}/>
+  )
+}
 
-  const { user } = useUser();
-  const { mutateAsync: newAccount } = api.account.new.useMutation();
-  const { mutateAsync: newAccountAdmin } = api.accountAdmin.new.useMutation();
-  const { data: currentUser } = api.user.getByClerkId.useQuery({ clerkId: user?.id });
-
+interface UserIsLoadedProps {
+  clerkId: string;
+}
+function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
+  const { mutateAsync: createAccount } = api.account.new.useMutation();
+  const { mutateAsync: addAdmin } = api.accountAdmin.new.useMutation();
   const router = useRouter();
+  const { register, handleSubmit } = useForm<NewAccountType>();
 
-  const onSubmit: SubmitHandler<NewAccount> = async (data: NewAccount) => {
-    let createdAccount;
+  const onSubmit: SubmitHandler<NewAccountType> = async (data: NewAccountType) => {
+    let created: Account;
+    try {
+      created = await createAccount(data);
+    } catch (e) {
+      return;
+    }
 
     try {
-      createdAccount = await newAccount(data);
-    } catch (error) {
-      toast.error("Failed to create account");
-      return;
-    }
-
-    if (user === null || user === undefined) {
-      toast.error("Log in to add account Admin");
-      return;
-    }
-
-    if (currentUser === undefined) {
-      toast.error("You need to login");
-      return;
-    }
-        
-    try {
-      await newAccountAdmin({
-        accountId: createdAccount.id,
-        adminId: currentUser.id
+      await addAdmin({
+        accountId: created.id,
+        clerkId
       });
-    } catch (error) {
-      toast.error("Failed to add account Admin");
-      console.log(error);
+    } catch (e) {
       return;
     }
 
     toast.success("Account created");
-
     router.push("/dashboard/accounts");
   }
 

@@ -1,7 +1,7 @@
-import type { Account, NewAccount, UpdateAccount } from "~/server/db/schema";
+import type { Account, AccountAdmin, NewAccount, NewAccountAdmin, UpdateAccount, User } from "~/server/db/schema";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
-import { accounts } from "~/server/db/schema";
+import { accountAdmins, accounts, users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 
@@ -50,24 +50,26 @@ export const accountRouter = createTRPCRouter({
       name: z.string(),
       description: z.string().optional().nullable(),
     }))
-    .mutation(({ input, ctx }) => {
+    .mutation(async ({ input, ctx }) => {
+      // create new account 
       const newAccount: NewAccount = {
         name: input.name,
         description: input.description,
       }
 
-      const mutation = ctx.db.insert(accounts).values(newAccount).returning();
-      const res = mutation.get();
-
-      if (res === undefined) {
+      let account: Account;
+      try {
+        const mutation = ctx.db.insert(accounts).values(newAccount).returning();
+        account = await mutation.get();
+      } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Account creation failed",
         })
       }
 
-      return res;
-    }),
+      return account;
+  }),
 
   edit: privateProcedure
     .input(z.object({

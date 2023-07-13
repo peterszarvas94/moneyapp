@@ -1,8 +1,7 @@
-import { useAuth } from "@clerk/nextjs";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
-import { toast } from "react-hot-toast";
+import { useAuth } from "@clerk/nextjs";
 
 const Home: NextPage = () => {
 
@@ -22,11 +21,10 @@ const Home: NextPage = () => {
             <>
               <button
                 className='underline'
-                onClick={() => {
-                  signOut()
-                    .catch(() => {
-                      toast.error("Failed to sign out");
-                    });
+                onClick={async () => {
+                  try {
+                    await signOut()
+                  } catch (e) {}
                 }}
               >
                 Sign Out
