@@ -5,7 +5,7 @@ import { api } from '~/utils/api';
 export type Access = "admin" | "viewer" | "denied";
 
 interface CheckAccessProps {
-  accountId: number;
+  accountId: number | undefined;
 }
 function useAccountAccessCheck({ accountId }: CheckAccessProps) {
   const [access, setAccess] = useState<Access>("denied");
@@ -14,23 +14,22 @@ function useAccountAccessCheck({ accountId }: CheckAccessProps) {
   const { mutateAsync: checkAdminAccess } = api.accountAdmin.checkAdminAccess.useMutation();
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !accountId) {
       return;
     }
     check({ accountId, clerkId: user.id });
-  }, [user]);
+  }, [user, accountId]);
 
   async function check({ accountId, clerkId }: { accountId: number, clerkId: string }) {
     try {
-      const res = await checkAdminAccess({
+      await checkAdminAccess({
         accountId,
         clerkId,
       });
-      if (res.accountId === accountId) {
-        setAccess("admin");
-        setChecked(true);
-      }
+      setAccess("admin");
+      setChecked(true);
     } catch (e) {
+      setChecked(true);
       return;
     }
   }

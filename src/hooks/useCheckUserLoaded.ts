@@ -14,7 +14,7 @@ function useCheckUserLoaded() {
 
   return {
     user,
-    checked
+    checked,
   };
 }
 

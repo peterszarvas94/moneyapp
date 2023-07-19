@@ -161,7 +161,7 @@ export const accountAdminRouter = createTRPCRouter({
       clerkId: z.string(),
       accountId: z.number(),
     }))
-    .mutation(async ({ input, ctx }): Promise<AccountAdmin> => {
+    .mutation(async ({ input, ctx }): Promise<boolean> => {
       // get user by clerk ID
       let user: { id: number } | undefined;
       try {
@@ -209,7 +209,7 @@ export const accountAdminRouter = createTRPCRouter({
         })
       }
 
-      return res;
+      return true;
     }),
 
   delete: privateProcedure

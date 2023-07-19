@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
+import { useAuth, SignInButton } from "@clerk/nextjs";
 import Head from "next/head";
 import Link from "next/link";
-import { useAuth } from "@clerk/nextjs";
 
 const Home: NextPage = () => {
 
@@ -37,12 +37,11 @@ const Home: NextPage = () => {
               </Link>
             </>
           ) : (
-            <Link
-              href="/sign-in"
-              className='underline'
-            >
-              Sign in
-            </Link>
+            <SignInButton afterSignInUrl="/dashboard">
+              <button className="underline">
+                Sign In
+              </button>
+            </SignInButton>
           )}
         </div>
       </main>

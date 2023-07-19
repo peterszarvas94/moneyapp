@@ -1,21 +1,18 @@
 import type { NextPage } from "next";
 import Head from "next/head";
+import { SubmitHandler, useForm } from "react-hook-form";
+
 import Redirect from "~/components/Redirect";
 import Spinner from "~/components/Spinner";
-import useAccountAccessCheck, { Access } from "~/hooks/useCheckAccess";
-import useParseId from "~/hooks/useParseId";
-import { useRouter } from "next/router";
 import DashBoardNav from "~/components/DashBoardNav";
-import { toast } from "react-hot-toast";
-import { api } from "~/utils/api";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { useState } from "react";
-import { User, User as UserFound } from "~/server/db/schema";
+import { Access } from "~/hooks/useCheckAccess";
+import useSearchUser from "~/hooks/useSearchUser";
+import { User } from "~/server/db/schema";
+import usePageLoader from "~/hooks/usePageLoader";
+import Skeleton from "~/components/Skeleton";
 
 const AddAdmin: NextPage = () => {
-  const router = useRouter();
-  const { id } = router.query;
-  const { parsedId } = useParseId({ id });
+  const { access, checked, id } = usePageLoader();
   return (
     <>
       <Head>
@@ -24,40 +21,24 @@ const AddAdmin: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        {!parsedId ? (
+        {!checked || !id ? (
           <Spinner />
         ) : (
-          <IdIsParsed id={parsedId} />
+          <Page access={access} id={id} />
         )}
       </main>
     </>
   );
 }
 
-interface IdIsParsedProps {
-  id: number;
-}
-function IdIsParsed({ id }: IdIsParsedProps) {
-  const { access, checked } = useAccountAccessCheck({ accountId: id });
-  return (
-    <>
-      {!checked ? (
-        <Spinner />
-      ) : (
-        <AccessIsChecked access={access} id={id} />
-      )}
-    </>
-  )
-}
-
-interface AccessIsChecked {
+interface PageProps {
   access: Access;
   id: number;
 }
-function AccessIsChecked({ access, id }: AccessIsChecked) {
+function Page({ access, id }: PageProps) {
   if (access === "admin") {
     return (
-      <AdminAccountContent id={id} />
+      <AdminContent id={id} />
     )
   }
 
@@ -66,31 +47,16 @@ function AccessIsChecked({ access, id }: AccessIsChecked) {
   )
 }
 
-
-interface AdminAccountContentProps {
+interface AdminContentProps {
   id: number;
 }
 type Form = {
   email: string
 }
-function AdminAccountContent({ id }: AdminAccountContentProps) {
-  const [ user, setUser ] = useState<UserFound | undefined>(undefined);
+function AdminContent({ id }: AdminContentProps) {
   const { register, handleSubmit } = useForm<Form>();
-  const { mutateAsync: searchUser } = api.user.getByEmail.useMutation();
-  // const router = useRouter();
-  const onSubmit: SubmitHandler<Form> = async ({ email }) => {
-    try {
-      const found = await searchUser({ email });
-      setUser(found);
-      return;
-    } catch (e) {
-      return;
-    }
-
-    setUser(undefined);
-    // toast.success('Account updated');
-    // router.push(`/dashboard/accounts/${id}`);
-  }
+  const { search, user, loading } = useSearchUser();
+  const onSubmit: SubmitHandler<Form> = async ({ email }) => search(email);
 
   return (
     <>
@@ -100,7 +66,7 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
       <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col p-6'>
         <label htmlFor='description'>Email</label>
         <input
-          type='text'
+          type='email'
           id='description'
           className='border-black border-2'
           {...register('email', { required: true })}
@@ -114,15 +80,34 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
           Search
         </button>
       </form>
-      
-      {user ? (
-        <UserFound user={user}/> 
+
+      {loading ? (
+        <Skeleton />
       ) : (
-        <div>
-          User not found
-        </div>
+        <UserIsLoaded user={user} />
       )}
     </>
+  )
+}
+
+interface UserIsLoadedProps {
+  user: User | null | undefined
+}
+function UserIsLoaded({ user }: UserIsLoadedProps) {
+  if (user === undefined) {
+    return <div />
+  }
+
+  if (user === null) {
+    return (
+      <div>
+        User not found
+      </div>
+    )
+  }
+
+  return (
+    <UserFound user={user} />
   )
 }
 
@@ -133,7 +118,7 @@ function UserFound({ user }: UserFoundProps) {
   // todo : add admin
   return (
     <>
-      {user.email}
+      {`User found: ${user.email}`}
     </>
   )
 }

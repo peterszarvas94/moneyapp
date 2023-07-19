@@ -1,21 +1,19 @@
 import type { NextPage } from "next";
-import type { Access } from "~/hooks/useCheckAccess";
-import useAccountAccessCheck from "~/hooks/useCheckAccess";
-import useParseId from "~/hooks/useParseId";
 import Head from "next/head";
+import { toast } from "react-hot-toast";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { useRouter } from "next/router";
+
+import type { Access } from "~/hooks/useCheckAccess";
 import Redirect from "~/components/Redirect";
 import DashBoardNav from "~/components/DashBoardNav";
-import { useRouter } from "next/router";
 import { api } from "~/utils/api";
-import { SubmitHandler, useForm } from "react-hook-form";
 import { Account, UpdateAccount } from "~/server/db/schema";
 import Spinner from "~/components/Spinner";
-import { toast } from "react-hot-toast";
+import usePageLoader from "~/hooks/usePageLoader";
 
 const EditAccountPage: NextPage = () => {
-  const router = useRouter();
-  const { id } = router.query;
-  const { parsedId } = useParseId({ id });
+  const { access, checked, id } = usePageLoader();
   return (
     <>
       <Head>
@@ -24,42 +22,24 @@ const EditAccountPage: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        {!parsedId ? (
-          <div>
-            <Spinner /> 
-          </div>
+        {!checked || !id ? (
+          <Spinner />
         ) : (
-          <IdIsParsed id={parsedId} />
+          <Page access={access} id={id} />
         )}
       </main>
     </>
   );
 }
 
-interface IdIsParsedProps {
-  id: number;
-}
-function IdIsParsed({ id }: IdIsParsedProps) {
-  const { access, checked } = useAccountAccessCheck({ accountId: id });
-  return (
-    <>
-      {!checked ? (
-        <Spinner />
-      ) : (
-        <AccessIsChecked access={access} id={id} />
-      )}
-    </>
-  )
-}
-
-interface AccessIsChecked {
+interface PageProps {
   access: Access;
   id: number;
 }
-function AccessIsChecked({ access, id }: AccessIsChecked) {
+function Page({ access, id }: PageProps) {
   if (access === "admin") {
     return (
-      <AdminAccountContent id={id} />
+      <AdminContent id={id} />
     )
   }
 
@@ -68,10 +48,10 @@ function AccessIsChecked({ access, id }: AccessIsChecked) {
   )
 }
 
-interface AdminAccountContentProps {
+interface AdminContentProps {
   id: number;
 }
-function AdminAccountContent({ id }: AdminAccountContentProps) {
+function AdminContent({ id }: AdminContentProps) {
   const { data: account } = api.account.get.useQuery({ id });
   return (
     <>
@@ -96,7 +76,7 @@ function AccountIsLoaded({ account }: AccountIsLoadedProps) {
   const onSubmit: SubmitHandler<UpdateAccount> = async (data) => {
     try {
       await editAccount({ id: account.id, ...data });
-    } catch (e) {}
+    } catch (e) { }
 
     toast.success('Account updated');
     router.push(`/dashboard/accounts/${account.id}`);

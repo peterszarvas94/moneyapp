@@ -1,21 +1,20 @@
 import type { NextPage } from "next";
-import type { Access } from "~/hooks/useCheckAccess";
-import useAccountAccessCheck from "~/hooks/useCheckAccess";
-import useParseId from "~/hooks/useParseId";
+import { toast } from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import Head from "next/head";
+
+import type { Access } from "~/hooks/useCheckAccess";
 import Redirect from "~/components/Redirect";
 import DashBoardNav from "~/components/DashBoardNav";
 import Spinner from "~/components/Spinner";
 import { useRouter } from "next/router";
 import { api } from "~/utils/api";
-import { toast } from "react-hot-toast";
-import { useUser } from "@clerk/nextjs";
+import usePageLoader from "~/hooks/usePageLoader";
+import Skeleton from "~/components/Skeleton";
 
 const AccountPage: NextPage = () => {
-  const router = useRouter();
-  const { id } = router.query;
-  const { parsedId } = useParseId({ id });
+  const { access, checked, id } = usePageLoader();
   return (
     <>
       <Head>
@@ -24,37 +23,21 @@ const AccountPage: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        {!parsedId ? (
+        {!checked || !id ? (
           <Spinner />
         ) : (
-          <IdIsParsed id={parsedId} />
+          <Page access={access} id={id} />
         )}
       </main>
     </>
   );
 }
 
-interface IdIsParsedProps {
-  id: number;
-}
-function IdIsParsed({ id }: IdIsParsedProps) {
-  const { access, checked } = useAccountAccessCheck({ accountId: id });
-  return (
-    <>
-      {!checked ? (
-        <Spinner />
-      ) : (
-        <AccessIsChecked access={access} id={id} />
-      )}
-    </>
-  )
-}
-
-interface AccessIsChecked {
+interface PageProps {
   access: Access;
   id: number;
 }
-function AccessIsChecked({ access, id }: AccessIsChecked) {
+function Page({ access, id }: PageProps) {
   if (access === "admin") {
     return (
       <AdminAccountContent id={id} />
@@ -78,19 +61,25 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
   const { user } = useUser();
 
   function renderAdmins() {
-    if (!admins || !user) {
-      return <Spinner />
-    }
-
     return (
       <>
         <div className="pt-6 italic">Admins of this account:</div>
         <ul>
-          {admins.map((admin) => (
-            <li key={admin.id}>
-              {`${admin.name} (${admin.email})`}
+          {!admins || !user ? (
+            <li>
+              <Skeleton />
             </li>
-          ))}
+          ) : (
+            <>
+              {
+                admins.map((admin) => (
+                  <li key={admin.id}>
+                    {`${admin.name} (${admin.email})`}
+                  </li>
+                ))
+              }
+            </>
+          )}
         </ul>
         <Link
           className="underline"
@@ -103,16 +92,28 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
   }
 
   function renderDetails() {
-    if (!account || !user) {
-      return <Spinner />
-    }
-
     return (
       <>
         <div className="pt-6 italic">Account details:</div>
         <ul>
-          <li>Name: {account.name}</li>
-          <li>Description: {account.description}</li>
+          {!account || !user ? (
+            <li>
+              <Skeleton />
+            </li>
+          ) : (
+            <li>
+              {`Name: ${account.name}`}
+            </li>
+          )}
+          {!account || !user ? (
+            <li>
+              <Skeleton />
+            </li>
+          ) : (
+            <li>
+              {`Description: ${account.description}`}
+            </li>
+          )}
           <li>
             <Link
               href={`/dashboard/accounts/${id}/edit`}
@@ -125,6 +126,8 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
             <button
               className="underline"
               onClick={async () => {
+                if (!user) return;
+
                 if (confirm("Are you sure?")) {
                   try {
                     await deleteAccountAdmin({

@@ -3,24 +3,44 @@ import Head from "next/head";
 import Link from "next/link";
 import DashBoardNav from "~/components/DashBoardNav";
 import Redirect from "~/components/Redirect";
+import Skeleton from "~/components/Skeleton";
 import Spinner from "~/components/Spinner";
 import useCheckUserLoaded from "~/hooks/useCheckUserLoaded";
+import { Account } from "~/server/db/schema";
 import { api } from "~/utils/api";
 
 const Accounts: NextPage = () => {
   const { user, checked } = useCheckUserLoaded();
-  if (!checked) {
-    return (
-      <Spinner />
-    );
-  }
-  if (!user) {
-    return (
-      <Redirect url='/,' />
-    );
-  }
   return (
-    <UserIsLoaded clerkId={user.id} />
+    <>
+      <Head>
+        <title>LLAA</title>
+        <meta name="description" content="Language Learning AI app" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <main>
+        {!checked ? (
+          <Spinner />
+        ) : (
+          <Page user={user ? user.id : undefined} />
+        )}
+      </main>
+    </>
+  )
+}
+
+interface PageProps {
+  user?: string;
+}
+function Page({ user }: PageProps) {
+  if (user) {
+    return (
+      <UserIsLoaded clerkId={user} />
+    )
+  }
+
+  return (
+    <Redirect url='/' />
   )
 }
 
@@ -32,56 +52,60 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
     clerkId
   });
 
-  if (!adminAccounts) {
+  return (
+    <div>
+      <h1 className='text-3xl'>My accounts</h1>
+
+      <DashBoardNav />
+
+      <div className='flex flex-col pt-6 gap-2'>
+        <Link
+          href='/dashboard/accounts/new'
+          className='underline'
+        >
+          New account
+        </Link>
+        <div className="pt-4">
+          {!adminAccounts ? (
+            <Skeleton />
+          ) : (
+            <AccountList accounts={adminAccounts} />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface AccountListProps {
+  accounts: Account[];
+}
+function AccountList({ accounts }: AccountListProps) {
+  if (accounts.length === 0) {
     return (
-      <Spinner />
-    );
+      <div>
+        You are not an admin of any accounts.
+      </div>
+    )
   }
 
   return (
     <>
-      <Head>
-        <title>LLAA</title>
-        <meta name="description" content="Language Learning AI app" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main>
-        <div>
-          <h1 className='text-3xl'>This is Accounts</h1>
-
-          <DashBoardNav />
-
-          <div className='flex flex-col pt-6 gap-2'>
+      <div>
+        My administrated accounts:
+      </div>
+      <ul>
+        {accounts.map((account) => (
+          <li key={account.id}>
             <Link
-              href='/dashboard/accounts/new'
+              href={`/dashboard/accounts/${account.id}`}
               className='underline'
             >
-              New account
+              {account.name}
             </Link>
-            {adminAccounts.length === 0 ? (
-              <div className="pt-4">
-                You are not administrating any accounts.
-              </div>
-            ) : (
-              <div className="pt-4">
-                My administrated accounts:
-              </div>
-            )}
-            <ul>
-              {adminAccounts.map((account) => (
-                <li key={account.id}>
-                  <Link
-                    href={`/dashboard/accounts/${account.id}`}
-                    className='underline'
-                  >
-                    {account.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </main>
+          </li>
+        ))}
+      </ul>
     </>
   )
 }

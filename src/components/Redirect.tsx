@@ -6,9 +6,11 @@ interface RedirectProps {
 }
 function Redirect({ url }: RedirectProps) {
   const router = useRouter();
+
   useEffect(() => {
     router.push(url);
   }, [url, router]);
+
   return (
     <div>
       Redirecting...
