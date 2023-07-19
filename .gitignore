@@ -36,3 +36,8 @@ yarn-error.log*
 
 # orm
 /src/server/db/migrations
+
+# lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
