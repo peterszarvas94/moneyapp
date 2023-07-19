@@ -10,6 +10,9 @@ import useSearchUser from "~/hooks/useSearchUser";
 import { User } from "~/server/db/schema";
 import usePageLoader from "~/hooks/usePageLoader";
 import Skeleton from "~/components/Skeleton";
+import { api } from "~/utils/api";
+import { toast } from "react-hot-toast";
+import { useRouter } from "next/router";
 
 const AddAdmin: NextPage = () => {
   const { access, checked, id } = usePageLoader();
@@ -63,7 +66,7 @@ function AdminContent({ id }: AdminContentProps) {
       <h1 className='text-3xl'>Add admin for account {id}</h1>
       <DashBoardNav />
 
-      <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col p-6'>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4">
         <label htmlFor='description'>Email</label>
         <input
           type='email'
@@ -82,43 +85,72 @@ function AdminContent({ id }: AdminContentProps) {
       </form>
 
       {loading ? (
-        <Skeleton />
+        <div className="pt-4">
+          <Skeleton />
+        </div>
       ) : (
-        <UserIsLoaded user={user} />
+        <UserIsLoaded user={user} account={id} />
       )}
     </>
   )
 }
 
 interface UserIsLoadedProps {
-  user: User | null | undefined
+  user: User | null | undefined;
+  account: number;
 }
-function UserIsLoaded({ user }: UserIsLoadedProps) {
+function UserIsLoaded({ user, account }: UserIsLoadedProps) {
   if (user === undefined) {
     return <div />
   }
 
   if (user === null) {
     return (
-      <div>
+      <div className="pt-4">
         User not found
       </div>
     )
   }
 
   return (
-    <UserFound user={user} />
+    <UserFound user={user} account={account} />
   )
 }
 
 interface UserFoundProps {
-  user: User
+  user: User;
+  account: number;
 }
-function UserFound({ user }: UserFoundProps) {
-  // todo : add admin
+function UserFound({ user, account }: UserFoundProps) {
+  const { mutateAsync: addAdmin } = api.accountAdmin.new.useMutation();
+  const router = useRouter();
+  const { data } = api.user.getByClerkId.useQuery({ clerkId: user.clerkId });
+
   return (
     <>
-      {`User found: ${user.email}`}
+      <div className="pt-4">
+        {`User found: ${user.name} (${user.email})`}
+      </div>
+      <button
+        className="underline"
+        onClick={async () => {
+          if (!data) {
+            return;
+          }
+
+          try {
+            await addAdmin({
+              accountId: account,
+              userId: data.id,
+            });
+
+            toast.success("Admin added");
+            router.push(`/dashboard/accounts/${account}`);
+          } catch (e) {}
+        }}
+      >
+        Add as admin
+      </button>
     </>
   )
 }

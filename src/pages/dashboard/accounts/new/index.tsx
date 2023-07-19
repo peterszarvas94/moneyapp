@@ -53,11 +53,16 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
   const { mutateAsync: addAdmin } = api.accountAdmin.new.useMutation();
   const router = useRouter();
   const { register, handleSubmit } = useForm<NewAccountType>();
+  const { data } = api.user.getByClerkId.useQuery({ clerkId });
 
-  const onSubmit: SubmitHandler<NewAccountType> = async (data: NewAccountType) => {
+  const onSubmit: SubmitHandler<NewAccountType> = async (formData: NewAccountType) => {
+    if (!data) {
+      return;
+    }
+
     let created: Account;
     try {
-      created = await createAccount(data);
+      created = await createAccount(formData);
     } catch (e) {
       return;
     }
@@ -65,7 +70,7 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
     try {
       await addAdmin({
         accountId: created.id,
-        clerkId
+        userId: data.id
       });
     } catch (e) {
       return;
@@ -80,7 +85,7 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
       <h1 className='text-3xl'>This is New Account</h1>
       <DashBoardNav />
 
-      <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col p-6'>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4">
         <label htmlFor='name'>Name</label>
         <input
           type='text'

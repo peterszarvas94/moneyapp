@@ -83,7 +83,7 @@ function AccountIsLoaded({ account }: AccountIsLoadedProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col p-6'>
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4">
       <label htmlFor='name'>Name</label>
       <input
         type='text'

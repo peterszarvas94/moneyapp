@@ -12,19 +12,20 @@ function useAccountAccessCheck({ accountId }: CheckAccessProps) {
   const [checked, setChecked] = useState<boolean>(false);
   const { user } = useUser();
   const { mutateAsync: checkAdminAccess } = api.accountAdmin.checkAdminAccess.useMutation();
+  const { data } = api.user.getByClerkId.useQuery({ clerkId: user?.id });
 
   useEffect(() => {
-    if (!user || !accountId) {
+    if (!user || !accountId || !data) {
       return;
     }
-    check({ accountId, clerkId: user.id });
-  }, [user, accountId]);
+    check({ accountId, userId: data.id });
+  }, [user, accountId, data]);
 
-  async function check({ accountId, clerkId }: { accountId: number, clerkId: string }) {
+  async function check({ accountId, userId }: { accountId: number, userId: number }) {
     try {
       await checkAdminAccess({
         accountId,
-        clerkId,
+        userId
       });
       setAccess("admin");
       setChecked(true);

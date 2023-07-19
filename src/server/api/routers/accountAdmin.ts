@@ -8,35 +8,12 @@ import { and, eq } from "drizzle-orm";
 export const accountAdminRouter = createTRPCRouter({
   new: privateProcedure
     .input(z.object({
-      clerkId: z.string(),
+      userId: z.number(),
       accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // get user by clerk ID
-      let user: { id: number } | undefined;
-      try {
-        user = await ctx.db.query.users.findFirst({
-          columns: {
-            id: true,
-          },
-          where: eq(users.clerkId, input.clerkId),
-        });
-      } catch (e) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found by clerk ID",
-        })
-      }
-
-      if (user === undefined) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found by clerk ID",
-        })
-      }
-
       const newAccountAdmin: NewAccountAdmin = {
-        adminId: user.id,
+        adminId: input.userId,
         accountId: input.accountId,
       }
 
@@ -158,33 +135,10 @@ export const accountAdminRouter = createTRPCRouter({
 
   checkAdminAccess: privateProcedure
     .input(z.object({
-      clerkId: z.string(),
+      userId: z.number(),
       accountId: z.number(),
     }))
-    .mutation(async ({ input, ctx }): Promise<boolean> => {
-      // get user by clerk ID
-      let user: { id: number } | undefined;
-      try {
-        user = await ctx.db.query.users.findFirst({
-          columns: {
-            id: true,
-          },
-          where: eq(users.clerkId, input.clerkId),
-        });
-      } catch (e) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User can not be searched by clerk ID",
-        })
-      }
-
-      if (user === undefined) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found by clerk ID",
-        })
-      }
-
+    .mutation(async ({ input, ctx }): Promise<true> => {
       // check if user is an admin of the account
       let res: AccountAdmin | undefined;
       try {
@@ -193,8 +147,12 @@ export const accountAdminRouter = createTRPCRouter({
             adminId: true,
             accountId: true,
           },
-          where: eq(accountAdmins.adminId, user.id),
+          where: and(
+            eq(accountAdmins.accountId, input.accountId),
+            eq(accountAdmins.adminId, input.userId),
+          ),
         })
+        console.log(res);
       } catch (e) {
         throw new TRPCError({
           code: "NOT_FOUND",

@@ -50,7 +50,7 @@ export const userRouter = createTRPCRouter({
     .input(z.object({
       clerkId: z.string().optional()
     }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }): Promise<User> => {
       if (input.clerkId === undefined) {
         throw new TRPCError({
           code: "BAD_REQUEST",
