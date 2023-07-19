@@ -48,8 +48,9 @@ interface UserIsLoadedProps {
   clerkId: string;
 }
 function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
+  const { data: user } = api.user.getByClerkId.useQuery({ clerkId });
   const { data: adminAccounts } = api.accountAdmin.getAccountsForAdmin.useQuery({
-    clerkId
+    id: user?.id,
   });
 
   return (

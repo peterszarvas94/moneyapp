@@ -1,45 +1,45 @@
-import type { Account, AccountAdmin, NewAccountAdmin, User } from "~/server/db/schema";
+import type { Account, AccountViewer, NewAccountViewer, User } from "~/server/db/schema";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
-import { accountAdmins, users } from "~/server/db/schema";
+import { accountViewers, users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 
-export const accountAdminRouter = createTRPCRouter({
+export const accountViewerRouter = createTRPCRouter({
   new: privateProcedure
     .input(z.object({
       userId: z.number(),
       accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const newAccountAdmin: NewAccountAdmin = {
-        adminId: input.userId,
+      const newAccountViewer: NewAccountViewer = {
+        viewerId: input.userId,
         accountId: input.accountId,
       }
 
-      let accountAdmin: AccountAdmin;
+      let accountViewer: AccountViewer;
       try {
-        const mutation = ctx.db.insert(accountAdmins).values(newAccountAdmin).returning();
-        accountAdmin = await mutation.get();
+        const mutation = ctx.db.insert(accountViewers).values(newAccountViewer).returning();
+        accountViewer = await mutation.get();
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create account admin",
+          message: "Failed to create account viewer",
         })
       }
 
-      return accountAdmin;
+      return accountViewer;
     }),
 
-  getAdminsForAccount: privateProcedure
+  getViewersForAccount: privateProcedure
     .input(z.object({
       accountId: z.number()
     }))
     .query(async ({ input, ctx }): Promise<User[]> => {
       let accounts: {
-        adminId: number;
+        viewerId: number;
         accountId: number;
-        admin: {
+        viewer: {
           id: number;
           name: string;
           email: string;
@@ -47,14 +47,14 @@ export const accountAdminRouter = createTRPCRouter({
         };
       }[];
       try {
-        accounts = await ctx.db.query.accountAdmins.findMany({
+        accounts = await ctx.db.query.accountViewers.findMany({
           columns: {
+            viewerId: true,
             accountId: true,
-            adminId: true,
           },
-          where: eq(accountAdmins.accountId, input.accountId),
+          where: eq(accountViewers.accountId, input.accountId),
           with: {
-            admin: {
+            viewer: {
               columns: {
                 id: true,
                 name: true,
@@ -71,16 +71,16 @@ export const accountAdminRouter = createTRPCRouter({
         })
       }
 
-      const admins = accounts.map((a) => a.admin);
-      return admins;
+      const viewers = accounts.map((a) => a.viewer);
+      return viewers;
     }),
 
-  getAccountsForAdmin: privateProcedure
+  getAccountsForViewer: privateProcedure
     .input(z.object({
       id: z.number().optional(),
     }))
     .query(async ({ input, ctx }): Promise<Account[]> => {
-      // get accounts for admin
+      // get accounts for viewer
       let res: {
         account: Account
       }[] = [];
@@ -90,9 +90,9 @@ export const accountAdminRouter = createTRPCRouter({
       }
 
       try {
-        res = await ctx.db.query.accountAdmins.findMany({
+        res = await ctx.db.query.accountViewers.findMany({
           columns: {},
-          where: eq(accountAdmins.adminId, input.id),
+          where: eq(accountViewers.viewerId, input.id),
           with: {
             account: true,
           },
@@ -100,7 +100,7 @@ export const accountAdminRouter = createTRPCRouter({
       } catch (e) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Accounts not found for admin",
+          message: "Accounts not found for viewer",
         })
       }
 
@@ -109,36 +109,36 @@ export const accountAdminRouter = createTRPCRouter({
       return accounts;
     }),
 
-  checkAdminAccess: privateProcedure
+  checkViewerAccess: privateProcedure
     .input(z.object({
       userId: z.number(),
       accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
-      // check if user is an admin of the account
-      let res: AccountAdmin | undefined;
+      // check if user is an viewer of the account
+      let res: AccountViewer | undefined;
       try {
-        res = await ctx.db.query.accountAdmins.findFirst({
+        res = await ctx.db.query.accountViewers.findFirst({
           columns: {
-            adminId: true,
+            viewerId: true,
             accountId: true,
           },
           where: and(
-            eq(accountAdmins.accountId, input.accountId),
-            eq(accountAdmins.adminId, input.userId),
+            eq(accountViewers.accountId, input.accountId),
+            eq(accountViewers.viewerId, input.userId),
           ),
         })
       } catch (e) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Account not found for admin",
+          message: "Account not found for viewer",
         })
       }
 
       if (res === undefined) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
-          message: "User is not an admin of this account",
+          message: "User is not a viewer of this account",
         })
       }
 
