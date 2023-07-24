@@ -7,11 +7,12 @@ export type Access = "admin" | "viewer" | "denied";
 interface CheckAccessProps {
   accountId: number | undefined;
 }
-function useAccountAccessCheck({ accountId }: CheckAccessProps) {
+function useCheckAccess({ accountId }: CheckAccessProps) {
   const [access, setAccess] = useState<Access>("denied");
   const [checked, setChecked] = useState<boolean>(false);
   const { user } = useUser();
   const { mutateAsync: checkAdminAccess } = api.accountAdmin.checkAdminAccess.useMutation();
+  const { mutateAsync: checkViewerAccess } = api.accountViewer.checkViewerAccess.useMutation();
   const { data } = api.user.getByClerkId.useQuery({ clerkId: user?.id });
 
   useEffect(() => {
@@ -23,22 +24,37 @@ function useAccountAccessCheck({ accountId }: CheckAccessProps) {
 
   async function check({ accountId, userId }: { accountId: number, userId: number }) {
     try {
-      await checkAdminAccess({
+      const isAdmin = await checkAdminAccess({
         accountId,
         userId
       });
-      setAccess("admin");
-      setChecked(true);
-    } catch (e) {
-      setChecked(true);
-      return;
-    }
+      if (isAdmin) {
+        setAccess("admin");
+        setChecked(true);
+        return;
+      }
+    } catch (e) {}
+
+    try {
+      const isViewer = await checkViewerAccess({
+        accountId,
+        userId
+      });
+      if (isViewer) {
+        setAccess("viewer");
+        setChecked(true);
+        return;
+      }
+    } catch (e) {}
+
+    setAccess("denied");
+    setChecked(true);
   }
 
   return {
     access,
-    checked
+    checked,
   };
 }
 
-export default useAccountAccessCheck;
+export default useCheckAccess;

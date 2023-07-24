@@ -49,9 +49,9 @@ interface UserIsLoadedProps {
 }
 function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
   const { data: user } = api.user.getByClerkId.useQuery({ clerkId });
-  const { data: adminAccounts } = api.accountAdmin.getAccountsForAdmin.useQuery({
-    id: user?.id,
-  });
+  const { data: adminAccounts } = api.accountAdmin.getAccountsForAdmin.useQuery({ id: user?.id });
+  const { data: viewerAccounts } = api.accountViewer.getAccountsForViewer.useQuery({ id: user?.id });
+
 
   return (
     <div>
@@ -70,7 +70,14 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
           {!adminAccounts ? (
             <Skeleton />
           ) : (
-            <AccountList accounts={adminAccounts} />
+            <AdminAccountList accounts={adminAccounts} />
+          )}
+        </div>
+        <div className="pt-4">
+          {!viewerAccounts ? (
+            <Skeleton />
+          ) : (
+            <ViewerAccountList accounts={viewerAccounts} />
           )}
         </div>
       </div>
@@ -78,16 +85,12 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
   )
 }
 
-interface AccountListProps {
+interface AdminAccountListProps {
   accounts: Account[];
 }
-function AccountList({ accounts }: AccountListProps) {
+function AdminAccountList({ accounts }: AdminAccountListProps) {
   if (accounts.length === 0) {
-    return (
-      <div>
-        You are not an admin of any accounts.
-      </div>
-    )
+    return "No administrated accounts."
   }
 
   return (
@@ -110,5 +113,36 @@ function AccountList({ accounts }: AccountListProps) {
     </>
   )
 }
+
+
+interface ViewerAccountListProps {
+  accounts: Account[];
+}
+function ViewerAccountList({ accounts }: ViewerAccountListProps) {
+  if (accounts.length === 0) {
+    return "No viewed accounts."
+  }
+
+  return (
+    <>
+      <div>
+        My viewed accounts:
+      </div>
+      <ul>
+        {accounts.map((account) => (
+          <li key={account.id}>
+            <Link
+              href={`/dashboard/accounts/${account.id}`}
+              className='underline'
+            >
+              {account.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
+
 
 export default Accounts;
