@@ -323,7 +323,7 @@ function ViewerAccountContent({ id }: ViewerAccountContentProps) {
 
   return (
     <>
-      <h1 className='text-3xl'>You are admin of Account {id}</h1>
+      <h1 className='text-3xl'>You are viewer of Account {id}</h1>
       <DashBoardNav />
       <div className="pt-6 italic">Admins of this account:</div>
       <ul>
