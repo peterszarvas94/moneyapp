@@ -10,12 +10,9 @@ export const userRouter = createTRPCRouter({
     .input(z.object({
       id: z.number().optional()
     }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }): Promise<User | null> => {
       if (input.id === undefined) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "User ID is not defined",
-        })
+        return null;
       }
 
       let user: User | undefined;
@@ -31,16 +28,13 @@ export const userRouter = createTRPCRouter({
         });
       } catch (e) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
+          code: "BAD_REQUEST",
+          message: "User can not be searched by id",
         })
       }
 
       if (user === undefined) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        })
+        return null;
       }
 
       return user;
@@ -50,12 +44,9 @@ export const userRouter = createTRPCRouter({
     .input(z.object({
       clerkId: z.string().optional()
     }))
-    .query(async ({ input, ctx }): Promise<User> => {
+    .query(async ({ input, ctx }): Promise<User | null> => {
       if (input.clerkId === undefined) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "User\'s clerkId is not defined",
-        })
+        return null;
       }
 
       let user: User | undefined;
@@ -71,16 +62,13 @@ export const userRouter = createTRPCRouter({
         });
       } catch (e) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
+          code: "BAD_REQUEST",
+          message: "User can not be searched by clerkId",
         })
       }
 
       if (user === undefined) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        })
+        return null;
       }
 
       return user;

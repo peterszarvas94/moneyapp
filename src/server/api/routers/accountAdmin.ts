@@ -114,7 +114,7 @@ export const accountAdminRouter = createTRPCRouter({
       userId: z.number(),
       accountId: z.number(),
     }))
-    .mutation(async ({ input, ctx }): Promise<true> => {
+    .mutation(async ({ input, ctx }): Promise<boolean> => {
       // check if user is an admin of the account
       let res: AccountAdmin | undefined;
       try {
@@ -136,9 +136,44 @@ export const accountAdminRouter = createTRPCRouter({
       }
 
       if (res === undefined) {
+        return false;
+      }
+
+      return true;
+    }),
+
+  delete: privateProcedure
+    .input(z.object({
+      userId: z.number(),
+      accountId: z.number(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      try {
+        await ctx.db.delete(accountAdmins).where(and(
+          eq(accountAdmins.accountId, input.accountId),
+          eq(accountAdmins.adminId, input.userId),
+        )).run();
+      } catch (e) {
         throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User is not an admin of this account",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete account admin",
+        })
+      }
+
+      return true;
+    }),
+
+  deleteAllForAccount: privateProcedure
+    .input(z.object({
+      accountId: z.number(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      try {
+        await ctx.db.delete(accountAdmins).where(eq(accountAdmins.accountId, input.accountId)).run();
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete account admins",
         })
       }
 

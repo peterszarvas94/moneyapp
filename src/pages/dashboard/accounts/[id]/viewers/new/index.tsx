@@ -15,7 +15,7 @@ import { toast } from "react-hot-toast";
 import { useRouter } from "next/router";
 import { useUser } from "@clerk/nextjs";
 
-const AddAdmin: NextPage = () => {
+const AddViewer: NextPage = () => {
   const { access, checked, id } = usePageLoader();
   return (
     <>
@@ -64,17 +64,16 @@ function AdminContent({ id }: AdminContentProps) {
   const { data } = api.user.getByClerkId.useQuery({ clerkId: clerkUser?.id });
   const onSubmit: SubmitHandler<Form> = async ({ email }) => {
     if (data && data.email === email) {
-      toast.error("You can't add yourself as an admin");
+      toast.error("You can't add yourself as a viewer");
       return;
     }
 
     search(email);
   }
 
-
   return (
     <>
-      <h1 className='text-3xl'>Add admin for account {id}</h1>
+      <h1 className='text-3xl'>Add viewer for account {id}</h1>
       <DashBoardNav />
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4">
@@ -133,7 +132,7 @@ interface UserFoundProps {
   account: number;
 }
 function UserFound({ user, account }: UserFoundProps) {
-  const { mutateAsync: addAdmin } = api.accountAdmin.new.useMutation();
+  const { mutateAsync: addViewer } = api.accountViewer.new.useMutation();
   const { mutateAsync: checkAdminAccess } = api.accountAdmin.checkAdminAccess.useMutation();
   const { mutateAsync: checkViewerAccess } = api.accountViewer.checkViewerAccess.useMutation();
   const router = useRouter();
@@ -160,7 +159,7 @@ function UserFound({ user, account }: UserFoundProps) {
               toast.error("User is already admin");
               return;
             }
-          } catch (e) { }
+          } catch (e) {}
 
           try {
             const isViewer = await checkViewerAccess({
@@ -171,23 +170,23 @@ function UserFound({ user, account }: UserFoundProps) {
               toast.error("User is already viewer");
               return;
             }
-          } catch (e) { }
+          } catch (e) {}
 
           try {
-            await addAdmin({
+            await addViewer({
               accountId: account,
               userId: data.id,
             });
 
-            toast.success("Admin added");
+            toast.success("Viewer added");
             router.push(`/dashboard/accounts/${account}`);
-          } catch (e) { }
+          } catch (e) {}
         }}
       >
-        Add as admin
+        Add as viewer
       </button>
     </>
   )
 }
 
-export default AddAdmin;
+export default AddViewer;

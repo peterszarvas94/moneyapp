@@ -114,7 +114,7 @@ export const accountViewerRouter = createTRPCRouter({
       userId: z.number(),
       accountId: z.number(),
     }))
-    .mutation(async ({ input, ctx }): Promise<true> => {
+    .mutation(async ({ input, ctx }): Promise<boolean> => {
       // check if user is an viewer of the account
       let res: AccountViewer | undefined;
       try {
@@ -136,9 +136,45 @@ export const accountViewerRouter = createTRPCRouter({
       }
 
       if (res === undefined) {
+        return false;
+      }
+
+      return true;
+    }),
+
+
+  delete: privateProcedure
+    .input(z.object({
+      userId: z.number(),
+      accountId: z.number(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      try {
+        await ctx.db.delete(accountViewers).where(and(
+          eq(accountViewers.accountId, input.accountId),
+          eq(accountViewers.viewerId, input.userId),
+        )).run();
+      } catch (e) {
         throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User is not a viewer of this account",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete account admin",
+        })
+      }
+
+      return true;
+    }),
+
+  deleteAllForAccount: privateProcedure
+    .input(z.object({
+      accountId: z.number(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      try {
+        await ctx.db.delete(accountViewers).where(eq(accountViewers.accountId, input.accountId)).run();
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete account admins",
         })
       }
 

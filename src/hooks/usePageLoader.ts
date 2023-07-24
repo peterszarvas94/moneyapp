@@ -1,13 +1,13 @@
 import { useRouter } from "next/router";
 import useParseId from "./useParseId";
-import useAccountAccessCheck from "./useCheckAccess";
+import useCheckAccess from "./useCheckAccess";
 
 function usePageLoader() {
   const router = useRouter();
   const { id } = router.query;
   const { parsedId } = useParseId({ id });
 
-  const { access, checked } = useAccountAccessCheck({ accountId: parsedId });
+  const { access, checked } = useCheckAccess({ accountId: parsedId });
 
   return {
     access,
