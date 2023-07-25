@@ -1,7 +1,7 @@
 import type { Account, AccountAdmin, NewAccountAdmin, User } from "~/server/db/schema";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
-import { accountAdmins, users } from "~/server/db/schema";
+import { accountAdmins } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 
@@ -33,9 +33,13 @@ export const accountAdminRouter = createTRPCRouter({
 
   getAdminsForAccount: privateProcedure
     .input(z.object({
-      accountId: z.number()
+      accountId: z.number().optional(),
     }))
-    .query(async ({ input, ctx }): Promise<User[]> => {
+    .query(async ({ input, ctx }): Promise<User[] | null> => {
+      if (input.accountId === undefined) {
+        return null;
+      }
+
       let accounts: {
         adminId: number;
         accountId: number;
@@ -77,22 +81,22 @@ export const accountAdminRouter = createTRPCRouter({
 
   getAccountsForAdmin: privateProcedure
     .input(z.object({
-      id: z.number().optional(),
+      userId: z.number().optional(),
     }))
-    .query(async ({ input, ctx }): Promise<Account[]> => {
+    .query(async ({ input, ctx }): Promise<Account[] | null> => {
+      if (input.userId === undefined) {
+        return null;
+      }
+
       // get accounts for admin
       let res: {
         account: Account
       }[] = [];
 
-      if (!input.id) {
-        return res.map((r) => r.account);
-      }
-
       try {
         res = await ctx.db.query.accountAdmins.findMany({
           columns: {},
-          where: eq(accountAdmins.adminId, input.id),
+          where: eq(accountAdmins.adminId, input.userId),
           with: {
             account: true,
           },
@@ -132,6 +136,39 @@ export const accountAdminRouter = createTRPCRouter({
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Account not found for admin",
+        })
+      }
+
+      if (res === undefined) {
+        return false;
+      }
+
+      return true;
+    }),
+
+  checkAccess: privateProcedure
+    .input(z.object({
+      userId: z.number().optional(),
+      accountId: z.number().optional(),
+    }))
+    .query(async ({ input, ctx }): Promise<boolean> => {
+      if (input.userId === undefined || input.accountId === undefined) {
+        return false;
+      }
+
+      // check if user is an admin of the account
+      let res: AccountAdmin | undefined;
+      try {
+        res = await ctx.db.query.accountAdmins.findFirst({
+          where: and(
+            eq(accountAdmins.accountId, input.accountId),
+            eq(accountAdmins.adminId, input.userId),
+          ),
+        })
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Admin access check failed",
         })
       }
 

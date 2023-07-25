@@ -1,7 +1,7 @@
 import type { Account, AccountViewer, NewAccountViewer, User } from "~/server/db/schema";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
-import { accountViewers, users } from "~/server/db/schema";
+import { accountViewers } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 
@@ -33,9 +33,13 @@ export const accountViewerRouter = createTRPCRouter({
 
   getViewersForAccount: privateProcedure
     .input(z.object({
-      accountId: z.number()
+      accountId: z.number().optional(),
     }))
-    .query(async ({ input, ctx }): Promise<User[]> => {
+    .query(async ({ input, ctx }): Promise<User[] | null> => {
+      if (input.accountId === undefined) {
+        return null;
+      }
+
       let accounts: {
         viewerId: number;
         accountId: number;
@@ -77,22 +81,26 @@ export const accountViewerRouter = createTRPCRouter({
 
   getAccountsForViewer: privateProcedure
     .input(z.object({
-      id: z.number().optional(),
+      userId: z.number().optional(),
     }))
-    .query(async ({ input, ctx }): Promise<Account[]> => {
+    .query(async ({ input, ctx }): Promise<Account[] | null> => {
+      if (input.userId === undefined) {
+        return null;
+      }
+
       // get accounts for viewer
       let res: {
         account: Account
       }[] = [];
 
-      if (!input.id) {
+      if (!input.userId) {
         return res.map((r) => r.account);
       }
 
       try {
         res = await ctx.db.query.accountViewers.findMany({
           columns: {},
-          where: eq(accountViewers.viewerId, input.id),
+          where: eq(accountViewers.viewerId, input.userId),
           with: {
             account: true,
           },
@@ -141,6 +149,40 @@ export const accountViewerRouter = createTRPCRouter({
 
       return true;
     }),
+
+  checkAccess: privateProcedure
+    .input(z.object({
+      userId: z.number().optional(),
+      accountId: z.number().optional(),
+    }))
+    .query(async ({ input, ctx }): Promise<boolean> => {
+      if (input.userId === undefined || input.accountId === undefined) {
+        return false;
+      }
+
+      // check if user is an admin of the account
+      let res: AccountViewer | undefined;
+      try {
+        res = await ctx.db.query.accountViewers.findFirst({
+          where: and(
+            eq(accountViewers.accountId, input.accountId),
+            eq(accountViewers.viewerId, input.userId),
+          ),
+        })
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Viewer access check failed",
+        })
+      }
+
+      if (res === undefined) {
+        return false;
+      }
+
+      return true;
+    }),
+
 
 
   delete: privateProcedure

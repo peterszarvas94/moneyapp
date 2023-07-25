@@ -1,16 +1,18 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
+import { useContext } from "react";
 import DashBoardNav from "~/components/DashBoardNav";
-import Redirect from "~/components/Redirect";
 import Skeleton from "~/components/Skeleton";
-import Spinner from "~/components/Spinner";
-import useCheckUserLoaded from "~/hooks/useCheckUserLoaded";
+import { UserContext } from "~/context/user";
 import { Account } from "~/server/db/schema";
 import { api } from "~/utils/api";
 
-const Accounts: NextPage = () => {
-  const { user, checked } = useCheckUserLoaded();
+const AccountsPage: NextPage = () => {
+  const { user } = useContext(UserContext);
+  const { data: adminAccounts } = api.accountAdmin.getAccountsForAdmin.useQuery({ userId: user?.id });
+  const { data: viewerAccounts } = api.accountViewer.getAccountsForViewer.useQuery({ userId: user?.id });
+
   return (
     <>
       <Head>
@@ -18,43 +20,6 @@ const Accounts: NextPage = () => {
         <meta name="description" content="Language Learning AI app" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main>
-        {!checked ? (
-          <Spinner />
-        ) : (
-          <Page user={user ? user.id : undefined} />
-        )}
-      </main>
-    </>
-  )
-}
-
-interface PageProps {
-  user?: string;
-}
-function Page({ user }: PageProps) {
-  if (user) {
-    return (
-      <UserIsLoaded clerkId={user} />
-    )
-  }
-
-  return (
-    <Redirect url='/' />
-  )
-}
-
-interface UserIsLoadedProps {
-  clerkId: string;
-}
-function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
-  const { data: user } = api.user.getByClerkId.useQuery({ clerkId });
-  const { data: adminAccounts } = api.accountAdmin.getAccountsForAdmin.useQuery({ id: user?.id });
-  const { data: viewerAccounts } = api.accountViewer.getAccountsForViewer.useQuery({ id: user?.id });
-
-
-  return (
-    <div>
       <h1 className='text-3xl'>My accounts</h1>
 
       <DashBoardNav />
@@ -81,7 +46,7 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -145,4 +110,4 @@ function ViewerAccountList({ accounts }: ViewerAccountListProps) {
 }
 
 
-export default Accounts;
+export default AccountsPage;

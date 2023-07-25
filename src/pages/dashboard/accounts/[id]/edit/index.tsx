@@ -3,17 +3,19 @@ import Head from "next/head";
 import { toast } from "react-hot-toast";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useRouter } from "next/router";
-
-import type { Access } from "~/hooks/useCheckAccess";
-import Redirect from "~/components/Redirect";
 import DashBoardNav from "~/components/DashBoardNav";
 import { api } from "~/utils/api";
 import { Account, UpdateAccount } from "~/server/db/schema";
 import Spinner from "~/components/Spinner";
 import usePageLoader from "~/hooks/usePageLoader";
+import { AccountContext } from "~/context/account";
+import { useContext} from "react";
+import useCheckAccess from "~/hooks/useCheckAccess";
+import NoAccess from "~/components/NoAccess";
 
 const EditAccountPage: NextPage = () => {
-  const { access, checked, id } = usePageLoader();
+  usePageLoader();
+
   return (
     <>
       <Head>
@@ -22,37 +24,27 @@ const EditAccountPage: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        {!checked || !id ? (
-          <Spinner />
-        ) : (
-          <Page access={access} id={id} />
-        )}
+        <Page/>
       </main>
     </>
   );
 }
 
-interface PageProps {
-  access: Access;
-  id: number;
-}
-function Page({ access, id }: PageProps) {
-  if (access === "admin") {
+function Page() {
+  const { adminAccess } = useCheckAccess();
+  if (adminAccess) {
     return (
-      <AdminContent id={id} />
+      <AdminContent />
     )
   }
 
   return (
-    <Redirect url={`/dashboard/accounts/${id}`} />
+    <NoAccess />
   )
 }
 
-interface AdminContentProps {
-  id: number;
-}
-function AdminContent({ id }: AdminContentProps) {
-  const { data: account } = api.account.get.useQuery({ id });
+function AdminContent() {
+  const { account, id } = useContext(AccountContext);
   return (
     <>
       <h1 className='text-3xl'>Edit Account {id}</h1>
@@ -76,9 +68,12 @@ function AccountIsLoaded({ account }: AccountIsLoadedProps) {
   const onSubmit: SubmitHandler<UpdateAccount> = async (data) => {
     try {
       await editAccount({ id: account.id, ...data });
-    } catch (e) { }
+      toast.success('Account updated');
+    } catch (e) {
+      toast.error('Error updating account');
+      return;
+    }
 
-    toast.success('Account updated');
     router.push(`/dashboard/accounts/${account.id}`);
   }
 
@@ -91,7 +86,7 @@ function AccountIsLoaded({ account }: AccountIsLoadedProps) {
         className='border-black border-2'
         {...register('name', { required: true })}
         required
-        defaultValue={account?.name}
+        defaultValue={account.name}
       />
 
       <label htmlFor='description'>Description</label>
@@ -100,7 +95,7 @@ function AccountIsLoaded({ account }: AccountIsLoadedProps) {
         id='description'
         className='border-black border-2'
         {...register('description')}
-        defaultValue={account?.description ?? undefined}
+        defaultValue={account.description ?? undefined}
       />
 
       <button

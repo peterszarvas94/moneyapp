@@ -3,18 +3,19 @@ import { toast } from "react-hot-toast";
 import Link from "next/link";
 import Head from "next/head";
 import { TiDelete } from "react-icons/ti";
-import type { Access } from "~/hooks/useCheckAccess";
-import Redirect from "~/components/Redirect";
 import DashBoardNav from "~/components/DashBoardNav";
-import Spinner from "~/components/Spinner";
 import { useRouter } from "next/router";
 import { api } from "~/utils/api";
-import usePageLoader from "~/hooks/usePageLoader";
 import Skeleton from "~/components/Skeleton";
-import { useUser } from "@clerk/nextjs";
+import { useContext, useEffect } from "react";
+import { AccountContext } from "~/context/account";
+import { UserContext } from "~/context/user";
+import NoAccess from "~/components/NoAccess";
+import useCheckAccess from "~/hooks/useCheckAccess";
+import usePageLoader from "~/hooks/usePageLoader";
 
 const AccountPage: NextPage = () => {
-  const { access, checked, id } = usePageLoader();
+  usePageLoader();
   return (
     <>
       <Head>
@@ -23,53 +24,47 @@ const AccountPage: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        {!checked || !id ? (
-          <Spinner />
-        ) : (
-          <Page access={access} id={id} />
-        )}
+        <Page />
       </main>
     </>
   );
 }
 
-interface PageProps {
-  access: Access;
-  id: number;
-}
-function Page({ access, id }: PageProps) {
-  if (access === "admin") {
+function Page() {
+  const { adminAccess, viewerAccess } = useCheckAccess();
+  if (adminAccess) {
     return (
-      <AdminAccountContent id={id} />
+      <AdminContent />
     )
   }
 
-  if (access === "viewer") {
+  if (viewerAccess) {
     return (
-      <ViewerAccountContent id={id} />
+      <ViewerContent />
     )
   }
 
   return (
-    <Redirect url="/dashboard/accounts/" />
+    <NoAccess />
   )
 }
 
-interface AdminAccountContentProps {
-  id: number;
-}
-function AdminAccountContent({ id }: AdminAccountContentProps) {
-  const { data: account } = api.account.get.useQuery({ id });
+function AdminContent() {
+  const { account, id: accountId, refetch } = useContext(AccountContext);
+  const { user: self } = useContext(UserContext);
   const { mutateAsync: deleteAccountAdmin } = api.accountAdmin.delete.useMutation();
   const { mutateAsync: deleteAccountAdmins } = api.accountAdmin.deleteAllForAccount.useMutation();
   const { mutateAsync: deleteAccountViewer } = api.accountViewer.delete.useMutation();
   const { mutateAsync: deleteAccountViewers } = api.accountViewer.deleteAllForAccount.useMutation();
   const { mutateAsync: deleteAccount } = api.account.delete.useMutation();
-  const { data: admins, refetch: getAdmins } = api.accountAdmin.getAdminsForAccount.useQuery({ accountId: id });
-  const { data: viewers, refetch: getViewers } = api.accountViewer.getViewersForAccount.useQuery({ accountId: id });
+  const { data: admins, refetch: getAdmins } = api.accountAdmin.getAdminsForAccount.useQuery({ accountId });
+  const { data: viewers, refetch: getViewers } = api.accountViewer.getViewersForAccount.useQuery({ accountId });
   const router = useRouter();
-  const { user } = useUser();
-  const { data: self } = api.user.getByClerkId.useQuery({ clerkId: user?.id })
+
+  useEffect(() => {
+    console.log('refetched');
+    refetch()
+  }, [accountId])
 
   function renderAdmins() {
     if (!admins) {
@@ -153,7 +148,7 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
                     return;
                   }
 
-                  if (confirm(`Are you sure you want to delete ${viewer.name} (${viewer.email}) as admin of account ${account.name}?`)) {
+                  if (confirm(`Are you sure you want to delete ${viewer.name} (${viewer.email}) as viewer of account ${account.name}?`)) {
                     try {
                       await deleteAccountViewer({
                         userId: viewer.id,
@@ -176,7 +171,7 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
 
   return (
     <>
-      <h1 className='text-3xl'>You are admin of Account {id}</h1>
+      <h1 className='text-3xl'>You are admin of Account {accountId}</h1>
       <DashBoardNav />
       <div className="pt-6 italic">Admins of this account:</div>
       <ul>
@@ -184,7 +179,7 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
       </ul>
       <Link
         className="underline"
-        href={`/dashboard/accounts/${id}/admins/new`}
+        href={`/dashboard/accounts/${accountId}/admins/new`}
       >
         Add new admin
       </Link>
@@ -195,7 +190,7 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
       </ul>
       <Link
         className="underline"
-        href={`/dashboard/accounts/${id}/viewers/new`}
+        href={`/dashboard/accounts/${accountId}/viewers/new`}
       >
         Add new viewer
       </Link>
@@ -218,7 +213,7 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
         </li>
         <li>
           <Link
-            href={`/dashboard/accounts/${id}/edit`}
+            href={`/dashboard/accounts/${accountId}/edit`}
             className="underline"
           >
             Edit
@@ -228,23 +223,27 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
           <button
             className="underline"
             onClick={async () => {
+              if (!accountId) {
+                return;
+              }
+
               if (confirm("Are you sure?")) {
                 try {
                   await deleteAccountViewers({
-                    accountId: id,
+                    accountId: accountId,
                   })
                 } catch (e) { }
 
                 try {
                   await deleteAccountAdmins({
-                    accountId: id,
+                    accountId: accountId,
                   })
                 } catch (e) {
                   return;
                 }
 
                 try {
-                  await deleteAccount({ id })
+                  await deleteAccount({ id: accountId })
                   toast.success("Account deleted");
                   router.push("/dashboard/accounts");
                 } catch (e) {
@@ -261,12 +260,10 @@ function AdminAccountContent({ id }: AdminAccountContentProps) {
   )
 }
 
-interface ViewerAccountContentProps {
-  id: number
-}
-function ViewerAccountContent({ id }: ViewerAccountContentProps) {
-  const { data: admins, } = api.accountAdmin.getAdminsForAccount.useQuery({ accountId: id });
-  const { data: viewers } = api.accountViewer.getViewersForAccount.useQuery({ accountId: id });
+function ViewerContent() {
+  const { id: accountId, account } = useContext(AccountContext);
+  const { data: admins, } = api.accountAdmin.getAdminsForAccount.useQuery({ accountId });
+  const { data: viewers } = api.accountViewer.getViewersForAccount.useQuery({ accountId });
 
   function renderAdmins() {
     if (!admins) {
@@ -323,7 +320,7 @@ function ViewerAccountContent({ id }: ViewerAccountContentProps) {
 
   return (
     <>
-      <h1 className='text-3xl'>You are viewer of Account {id}</h1>
+      <h1 className='text-3xl'>You are viewer of Account {accountId}</h1>
       <DashBoardNav />
       <div className="pt-6 italic">Admins of this account:</div>
       <ul>
@@ -332,6 +329,23 @@ function ViewerAccountContent({ id }: ViewerAccountContentProps) {
       <div className="pt-6 italic">Viewers of this account:</div>
       <ul>
         {renderViewers()}
+      </ul>
+      <div className="pt-6 italic">Account details:</div>
+      <ul>
+        <li>
+          {!account ? (
+            <Skeleton />
+          ) :
+            `Name: ${account.name}`
+          }
+        </li>
+        <li>
+          {!account ? (
+            <Skeleton />
+          ) :
+            `Description: ${account.description}`
+          }
+        </li>
       </ul>
     </>
   )

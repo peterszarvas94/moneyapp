@@ -1,19 +1,24 @@
+import { useContext, useEffect } from "react";
 import { useRouter } from "next/router";
-import useParseId from "./useParseId";
-import useCheckAccess from "./useCheckAccess";
+import { AccountContext } from "~/context/account";
 
 function usePageLoader() {
   const router = useRouter();
-  const { id } = router.query;
-  const { parsedId } = useParseId({ id });
+  const { id: routerId } = router.query;
+  const { setId } = useContext(AccountContext);
 
-  const { access, checked } = useCheckAccess({ accountId: parsedId });
+  useEffect(() => {
+    if (typeof routerId !== "string") {
+      return;
+    }
+    const parsed = parseInt(routerId);
+    if (isNaN(parsed)) {
+      return;
+    }
+    setId(parsed);
+  }, [routerId]);
 
-  return {
-    access,
-    checked,
-    id: parsedId,
-  }
+  return {};
 }
 
 export default usePageLoader;

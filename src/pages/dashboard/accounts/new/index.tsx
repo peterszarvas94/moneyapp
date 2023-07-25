@@ -6,12 +6,10 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { api } from "~/utils/api";
 import { useRouter } from "next/router";
-import useCheckUserLoaded from "~/hooks/useCheckUserLoaded";
-import Redirect from "~/components/Redirect";
-import Spinner from "~/components/Spinner";
+import { useContext } from "react";
+import { UserContext } from "~/context/user";
 
-const NewAccount: NextPage = () => {
-  const { user, checked } = useCheckUserLoaded();
+const NewAccountPage: NextPage = () => {
   return (
     <>
       <Head>
@@ -20,49 +18,27 @@ const NewAccount: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        {!checked ? (
-          <Spinner />
-        ) : (
-          <Page user={user ? user.id : undefined} />
-        )}
+        <Page />
       </main>
     </>
   )
 }
 
-interface PageProps {
-  user?: string;
-}
-function Page({ user }: PageProps) {
-  if (user) {
-    return (
-      <UserIsLoaded clerkId={user} />
-    )
-  }
-
-  return (
-    <Redirect url='/' />
-  )
-}
-
-interface UserIsLoadedProps {
-  clerkId: string;
-}
-function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
+function Page() {
   const { mutateAsync: createAccount } = api.account.new.useMutation();
   const { mutateAsync: addAdmin } = api.accountAdmin.new.useMutation();
   const router = useRouter();
   const { register, handleSubmit } = useForm<NewAccountType>();
-  const { data } = api.user.getByClerkId.useQuery({ clerkId });
+  const { user } = useContext(UserContext);
 
-  const onSubmit: SubmitHandler<NewAccountType> = async (formData: NewAccountType) => {
-    if (!data) {
+  const onSubmit: SubmitHandler<NewAccountType> = async (data: NewAccountType) => {
+    if (!user) {
       return;
     }
 
     let created: Account;
     try {
-      created = await createAccount(formData);
+      created = await createAccount(data);
     } catch (e) {
       return;
     }
@@ -70,7 +46,7 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
     try {
       await addAdmin({
         accountId: created.id,
-        userId: data.id
+        userId: user.id
       });
     } catch (e) {
       return;
@@ -114,4 +90,4 @@ function UserIsLoaded({ clerkId }: UserIsLoadedProps) {
   )
 }
 
-export default NewAccount;
+export default NewAccountPage;
