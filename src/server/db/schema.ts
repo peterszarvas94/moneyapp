@@ -22,6 +22,7 @@ export const accounts = sqliteTable('accounts', {
   id: integer('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
+  currency: text('currency').notNull(),
 })
 
 export type Account = InferModel<typeof accounts, 'select'>
@@ -30,11 +31,13 @@ export type UpdateAccount = {
   id?: number,
   name?: string,
   description?: string | null,
+  currency?: string,
 }
 
 export const accountRelations = relations(accounts, ({ many }) => ({
   accountAdmins: many(accountAdmins),
   accountViewers: many(accountViewers),
+  events: many(events),
 }))
 
 // account admins
@@ -78,5 +81,48 @@ export const accountViewersRelations = relations(accountViewers, ({ one }) => ({
   viewer: one(users, {
     fields: [accountViewers.viewerId],
     references: [users.id],
+  }),
+}))
+
+// event
+export const events = sqliteTable('event', {
+  id: integer('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  income: integer('amount').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+  accountId: integer('account_id').notNull().references(() => accounts.id),
+})
+
+export type Event = InferModel<typeof events, 'select'>
+export type NewEvent = InferModel<typeof events, 'insert'>
+
+export const eventRelations = relations(events, ({ one, many }) => ({
+  account: one(accounts, {
+    fields: [events.accountId],
+    references: [accounts.id],
+  }),
+  savings: many(savings),
+}))
+
+// savings
+export const savings = sqliteTable('savings', {
+  id: integer('id').primaryKey(),
+  name: text('name').notNull().notNull(),
+  description: text('description'),
+  amount: integer('amount').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+  eventId: integer('event_id').notNull().references(() => events.id),
+})
+
+export type Saving = InferModel<typeof savings, 'select'>
+export type NewSaving = InferModel<typeof savings, 'insert'>
+
+export const savingRelations = relations(savings, ({ one }) => ({
+  event: one(events, {
+    fields: [savings.eventId],
+    references: [events.id],
   }),
 }))

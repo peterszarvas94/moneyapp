@@ -10,8 +10,8 @@ import { api } from "~/utils/api";
 
 const AccountsPage: NextPage = () => {
   const { user } = useContext(UserContext);
-  const { data: adminAccounts } = api.accountAdmin.getAccountsForAdmin.useQuery({ userId: user?.id });
-  const { data: viewerAccounts } = api.accountViewer.getAccountsForViewer.useQuery({ userId: user?.id });
+  const { data: adminAccounts } = api.admin.getAccounts.useQuery({ userId: user?.id });
+  const { data: viewerAccounts } = api.viewer.getAccounts.useQuery({ userId: user?.id });
 
   return (
     <>

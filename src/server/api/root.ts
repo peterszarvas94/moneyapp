@@ -1,8 +1,9 @@
 import { createTRPCRouter } from "~/server/api/trpc";
 import { userRouter } from "./routers/user";
 import { accountRouter } from "./routers/account";
-import { accountAdminRouter } from "./routers/accountAdmin";
-import { accountViewerRouter } from "./routers/accountViewer";
+import { adminRouter } from "./routers/admin";
+import { viewerRouter } from "./routers/viewer";
+import { eventRouter } from "./routers/event";
 
 /**
  * This is the primary router for your server.
@@ -12,8 +13,9 @@ import { accountViewerRouter } from "./routers/accountViewer";
 export const appRouter = createTRPCRouter({
   user: userRouter,
   account: accountRouter,
-  accountAdmin: accountAdminRouter,
-  accountViewer: accountViewerRouter,
+  admin: adminRouter,
+  viewer: viewerRouter,
+  events: eventRouter,
 });
 
 // export type definition of API

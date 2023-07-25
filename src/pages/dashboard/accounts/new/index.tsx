@@ -26,7 +26,7 @@ const NewAccountPage: NextPage = () => {
 
 function Page() {
   const { mutateAsync: createAccount } = api.account.new.useMutation();
-  const { mutateAsync: addAdmin } = api.accountAdmin.new.useMutation();
+  const { mutateAsync: addAdmin } = api.admin.new.useMutation();
   const router = useRouter();
   const { register, handleSubmit } = useForm<NewAccountType>();
   const { user } = useContext(UserContext);
@@ -40,6 +40,7 @@ function Page() {
     try {
       created = await createAccount(data);
     } catch (e) {
+      toast.error("Account creation failed");
       return;
     }
 
@@ -49,6 +50,7 @@ function Page() {
         userId: user.id
       });
     } catch (e) {
+      toast.error("Account creation failed");
       return;
     }
 
@@ -77,6 +79,15 @@ function Page() {
           id='description'
           className='border-black border-2'
           {...register('description')}
+        />
+
+        <label htmlFor='currency'>Currency</label>
+        <input
+          type='text'
+          id='currency'
+          className='border-black border-2'
+          {...register('currency', { required: true })}
+          required
         />
 
         <button

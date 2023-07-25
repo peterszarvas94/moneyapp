@@ -5,7 +5,7 @@ import { accountAdmins } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 
-export const accountAdminRouter = createTRPCRouter({
+export const adminRouter = createTRPCRouter({
   new: privateProcedure
     .input(z.object({
       userId: z.number(),
@@ -31,55 +31,7 @@ export const accountAdminRouter = createTRPCRouter({
       return accountAdmin;
     }),
 
-  getAdminsForAccount: privateProcedure
-    .input(z.object({
-      accountId: z.number().optional(),
-    }))
-    .query(async ({ input, ctx }): Promise<User[] | null> => {
-      if (input.accountId === undefined) {
-        return null;
-      }
-
-      let accounts: {
-        adminId: number;
-        accountId: number;
-        admin: {
-          id: number;
-          name: string;
-          email: string;
-          clerkId: string;
-        };
-      }[];
-      try {
-        accounts = await ctx.db.query.accountAdmins.findMany({
-          columns: {
-            accountId: true,
-            adminId: true,
-          },
-          where: eq(accountAdmins.accountId, input.accountId),
-          with: {
-            admin: {
-              columns: {
-                id: true,
-                name: true,
-                email: true,
-                clerkId: true,
-              }
-            }
-          }
-        }).execute();
-      } catch (e) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Account not found",
-        })
-      }
-
-      const admins = accounts.map((a) => a.admin);
-      return admins;
-    }),
-
-  getAccountsForAdmin: privateProcedure
+  getAccounts: privateProcedure
     .input(z.object({
       userId: z.number().optional(),
     }))
@@ -194,23 +146,6 @@ export const accountAdminRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to delete account admin",
-        })
-      }
-
-      return true;
-    }),
-
-  deleteAllForAccount: privateProcedure
-    .input(z.object({
-      accountId: z.number(),
-    }))
-    .mutation(async ({ input, ctx }): Promise<true> => {
-      try {
-        await ctx.db.delete(accountAdmins).where(eq(accountAdmins.accountId, input.accountId)).run();
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete account admins",
         })
       }
 

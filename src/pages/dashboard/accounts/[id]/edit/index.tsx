@@ -9,7 +9,7 @@ import { Account, UpdateAccount } from "~/server/db/schema";
 import Spinner from "~/components/Spinner";
 import usePageLoader from "~/hooks/usePageLoader";
 import { AccountContext } from "~/context/account";
-import { useContext} from "react";
+import { useContext } from "react";
 import useCheckAccess from "~/hooks/useCheckAccess";
 import NoAccess from "~/components/NoAccess";
 
@@ -24,7 +24,7 @@ const EditAccountPage: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <Page/>
+        <Page />
       </main>
     </>
   );
@@ -65,7 +65,7 @@ function AccountIsLoaded({ account }: AccountIsLoadedProps) {
   const { register, handleSubmit } = useForm<UpdateAccount>();
   const { mutateAsync: editAccount } = api.account.edit.useMutation();
   const router = useRouter();
-  const onSubmit: SubmitHandler<UpdateAccount> = async (data) => {
+  const onSubmit: SubmitHandler<UpdateAccount> = async (data: UpdateAccount) => {
     try {
       await editAccount({ id: account.id, ...data });
       toast.success('Account updated');
@@ -96,6 +96,16 @@ function AccountIsLoaded({ account }: AccountIsLoadedProps) {
         className='border-black border-2'
         {...register('description')}
         defaultValue={account.description ?? undefined}
+      />
+
+      <label htmlFor='currency'>Currency</label>
+      <input
+        type='text'
+        id='currency'
+        className='border-black border-2'
+        {...register('currency', { required: true })}
+        required
+        defaultValue={account.currency}
       />
 
       <button

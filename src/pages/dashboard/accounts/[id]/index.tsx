@@ -52,13 +52,15 @@ function Page() {
 function AdminContent() {
   const { account, id: accountId, refetch } = useContext(AccountContext);
   const { user: self } = useContext(UserContext);
-  const { mutateAsync: deleteAccountAdmin } = api.accountAdmin.delete.useMutation();
-  const { mutateAsync: deleteAccountAdmins } = api.accountAdmin.deleteAllForAccount.useMutation();
-  const { mutateAsync: deleteAccountViewer } = api.accountViewer.delete.useMutation();
-  const { mutateAsync: deleteAccountViewers } = api.accountViewer.deleteAllForAccount.useMutation();
+  const { mutateAsync: deleteAdmin } = api.admin.delete.useMutation();
+  const { mutateAsync: deleteViewer } = api.viewer.delete.useMutation();
+  const { mutateAsync: deleteAdmins } = api.account.deleteAdmins.useMutation();
+  const { mutateAsync: deleteEvents } = api.account.deleteEvents.useMutation();
+  const { mutateAsync: deleteViewers } = api.account.deleteViewers.useMutation();
   const { mutateAsync: deleteAccount } = api.account.delete.useMutation();
-  const { data: admins, refetch: getAdmins } = api.accountAdmin.getAdminsForAccount.useQuery({ accountId });
-  const { data: viewers, refetch: getViewers } = api.accountViewer.getViewersForAccount.useQuery({ accountId });
+  const { data: admins, refetch: getAdmins } = api.account.getAdmins.useQuery({ accountId });
+  const { data: viewers, refetch: getViewers } = api.account.getViewers.useQuery({ accountId });
+  const { data: events } = api.account.getEvents.useQuery({ accountId });
   const router = useRouter();
 
   useEffect(() => {
@@ -99,7 +101,7 @@ function AdminContent() {
 
                   if (confirm(`Are you sure you want to delete ${admin.name} (${admin.email}) as admin of account ${account.name}?`)) {
                     try {
-                      await deleteAccountAdmin({
+                      await deleteAdmin({
                         userId: admin.id,
                         accountId: account.id
                       })
@@ -150,7 +152,7 @@ function AdminContent() {
 
                   if (confirm(`Are you sure you want to delete ${viewer.name} (${viewer.email}) as viewer of account ${account.name}?`)) {
                     try {
-                      await deleteAccountViewer({
+                      await deleteViewer({
                         userId: viewer.id,
                         accountId: account.id
                       })
@@ -162,6 +164,36 @@ function AdminContent() {
               >
                 <TiDelete />
               </button>
+            </li>
+          ))
+        }
+      </>
+    )
+  }
+
+  function renderEvents() {
+    if (!events) {
+      return (
+        <li>
+          <Skeleton />
+        </li>
+      )
+    }
+
+    if (events.length === 0) {
+      return (
+        <li>
+          No events
+        </li>
+      )
+    }
+
+    return (
+      <>
+        {
+          events.map((event) => (
+            <li key={event.id} className="flex items-center">
+              <div>{event.name}</div>
             </li>
           ))
         }
@@ -212,6 +244,13 @@ function AdminContent() {
           }
         </li>
         <li>
+          {!account ? (
+            <Skeleton />
+          ) :
+            `Currency: ${account.currency}`
+          }
+        </li>
+        <li>
           <Link
             href={`/dashboard/accounts/${accountId}/edit`}
             className="underline"
@@ -229,14 +268,22 @@ function AdminContent() {
 
               if (confirm("Are you sure?")) {
                 try {
-                  await deleteAccountViewers({
-                    accountId: accountId,
+                  await deleteViewers({
+                    accountId,
                   })
                 } catch (e) { }
 
                 try {
-                  await deleteAccountAdmins({
-                    accountId: accountId,
+                  await deleteAdmins({
+                    accountId,
+                  })
+                } catch (e) {
+                  return;
+                }
+
+                try {
+                  await deleteEvents({
+                    accountId
                   })
                 } catch (e) {
                   return;
@@ -256,14 +303,26 @@ function AdminContent() {
           </button>
         </li>
       </ul>
+
+      <div className="pt-6 italic">Events of this account:</div>
+      <ul>
+        {renderEvents()}
+      </ul>
+
+    {/*
+       todo... add event
+        <Link
+        className="underline"
+    */}
     </>
   )
 }
 
 function ViewerContent() {
   const { id: accountId, account } = useContext(AccountContext);
-  const { data: admins, } = api.accountAdmin.getAdminsForAccount.useQuery({ accountId });
-  const { data: viewers } = api.accountViewer.getViewersForAccount.useQuery({ accountId });
+  const { data: admins, } = api.account.getAdmins.useQuery({ accountId });
+  const { data: viewers } = api.account.getViewers.useQuery({ accountId });
+  const { data: events } = api.account.getEvents.useQuery({ accountId });
 
   function renderAdmins() {
     if (!admins) {
@@ -317,6 +376,35 @@ function ViewerContent() {
     )
   }
 
+  function renderEvents() {
+    if (!events) {
+      return (
+        <li>
+          <Skeleton />
+        </li>
+      )
+    }
+
+    if (events.length === 0) {
+      return (
+        <li>
+          No events
+        </li>
+      )
+    }
+
+    return (
+      <>
+        {
+          events.map((event) => (
+            <li key={event.id} className="flex items-center">
+              <div>{event.name}</div>
+            </li>
+          ))
+        }
+      </>
+    )
+  }
 
   return (
     <>
@@ -346,6 +434,17 @@ function ViewerContent() {
             `Description: ${account.description}`
           }
         </li>
+        <li>
+          {!account ? (
+            <Skeleton />
+          ) :
+            `Currency: ${account.currency}`
+          }
+        </li>
+      </ul>
+      <div className="pt-6 italic">Events of this account:</div>
+      <ul>
+        {renderEvents()}
       </ul>
     </>
   )

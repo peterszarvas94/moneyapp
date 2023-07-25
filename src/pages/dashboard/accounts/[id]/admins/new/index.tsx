@@ -123,15 +123,15 @@ function UserFound({ user }: UserFoundProps) {
   const router = useRouter();
   const { user: self } = useContext(UserContext);
   const { account } = useContext(AccountContext);
-  const { data: checkAdmin } = api.accountAdmin.checkAccess.useQuery({
+  const { data: checkAdmin } = api.admin.checkAccess.useQuery({
     userId: user.id,
     accountId: account?.id
   });
-  const { data: checkViewer } = api.accountViewer.checkAccess.useQuery({
+  const { data: checkViewer } = api.viewer.checkAccess.useQuery({
     userId: user.id,
     accountId: account?.id
   });
-  const { mutateAsync: addAdmin } = api.accountAdmin.new.useMutation();
+  const { mutateAsync: addAdmin } = api.admin.new.useMutation();
 
   return (
     <>
