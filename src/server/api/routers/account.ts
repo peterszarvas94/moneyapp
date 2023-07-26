@@ -11,7 +11,7 @@ export const accountRouter = createTRPCRouter({
       id: z.number().optional()
     }))
     .query(async ({ input, ctx }): Promise<Account | null> => {
-      if (input.id === undefined) {
+      if (!input.id) {
         return null;
       }
 
@@ -27,7 +27,7 @@ export const accountRouter = createTRPCRouter({
         })
       }
 
-      if (account === undefined) {
+      if (!account) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Account not found",

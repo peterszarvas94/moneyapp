@@ -15,7 +15,7 @@ export const appRouter = createTRPCRouter({
   account: accountRouter,
   admin: adminRouter,
   viewer: viewerRouter,
-  events: eventRouter,
+  event: eventRouter,
 });
 
 // export type definition of API

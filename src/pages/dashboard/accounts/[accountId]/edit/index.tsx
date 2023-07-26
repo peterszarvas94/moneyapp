@@ -1,15 +1,21 @@
-import type { Account, NewAccount } from "~/server/db/schema";
 import type { NextPage } from "next";
+import type { UpdateAccount } from "~/server/db/schema";
 import Head from "next/head";
-import Nav from "~/components/Nav";
-import { useForm, SubmitHandler } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import { api } from "~/utils/api";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { useRouter } from "next/router";
+import Nav from "~/components/Nav";
+import { api } from "~/utils/api";
+import Spinner from "~/components/Spinner";
+import useAccountIdParser from "~/hooks/useAccountIdParser";
 import { useContext } from "react";
+import useAccountCheckAccess from "~/hooks/useAccountCheckAccess";
+import NoAccess from "~/components/NoAccess";
 import { AppContext } from "~/context/app";
 
-const NewAccountPage: NextPage = () => {
+const EditAccountPage: NextPage = () => {
+  useAccountIdParser();
+
   return (
     <>
       <Head>
@@ -21,48 +27,53 @@ const NewAccountPage: NextPage = () => {
         <Page />
       </main>
     </>
-  )
+  );
 }
 
 function Page() {
-  const { mutateAsync: createAccount } = api.account.new.useMutation();
-  const { mutateAsync: addAdmin } = api.admin.new.useMutation();
-  const router = useRouter();
-  const { register, handleSubmit } = useForm<NewAccount>();
-  const { user } = useContext(AppContext);
-
-  const onSubmit: SubmitHandler<NewAccount> = async (data: NewAccount) => {
-    if (!user) {
-      return;
-    }
-
-    let created: Account;
-    try {
-      created = await createAccount(data);
-    } catch (e) {
-      toast.error("Account creation failed");
-      return;
-    }
-
-    try {
-      await addAdmin({
-        accountId: created.id,
-        userId: user.id
-      });
-    } catch (e) {
-      toast.error("Account creation failed");
-      return;
-    }
-
-    toast.success("Account created");
-    router.push("/dashboard/accounts");
+  const { adminAccess } = useAccountCheckAccess();
+  if (adminAccess) {
+    return (
+      <AdminContent />
+    )
   }
 
   return (
-    <div>
-      <h1 className='text-3xl'>This is New Account</h1>
-      <Nav />
+    <NoAccess />
+  )
+}
 
+function AdminContent() {
+  const { account } = useContext(AppContext);
+  const { register, handleSubmit } = useForm<UpdateAccount>();
+  const { mutateAsync: editAccount } = api.account.edit.useMutation();
+  const router = useRouter();
+  const onSubmit: SubmitHandler<UpdateAccount> = async (data: UpdateAccount) => {
+    if (!account) {
+      return;
+    }
+
+    try {
+      await editAccount({ id: account.id, ...data });
+      toast.success('Account updated');
+    } catch (e) {
+      toast.error('Error updating account');
+      return;
+    }
+
+    router.push(`/dashboard/accounts/${account.id}`);
+  }
+
+  if (!account) {
+    return (
+      <Spinner />
+    )
+  }
+
+  return (
+    <>
+      <h1 className='text-3xl'>Edit Account {account.id}</h1>
+      <Nav />
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4">
         <label htmlFor='name'>Name</label>
         <input
@@ -71,6 +82,7 @@ function Page() {
           className='border-black border-2'
           {...register('name', { required: true })}
           required
+          defaultValue={account.name}
         />
 
         <label htmlFor='description'>Description</label>
@@ -79,6 +91,7 @@ function Page() {
           id='description'
           className='border-black border-2'
           {...register('description')}
+          defaultValue={account.description ?? undefined}
         />
 
         <label htmlFor='currency'>Currency</label>
@@ -88,6 +101,7 @@ function Page() {
           className='border-black border-2'
           {...register('currency', { required: true })}
           required
+          defaultValue={account.currency}
         />
 
         <button
@@ -97,8 +111,8 @@ function Page() {
           Submit
         </button>
       </form>
-    </div>
+    </>
   )
 }
 
-export default NewAccountPage;
+export default EditAccountPage;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import DashBoardNav from "./DashBoardNav";
+import Nav from "./Nav";
 import Spinner from "./Spinner";
 
 function NoAccess() {
@@ -24,7 +24,7 @@ function NoAccess() {
   return (
     <div>
       <h1 className='text-3xl'>Access Denied</h1>
-      <DashBoardNav />
+      <Nav />
     </div>
   );
 }

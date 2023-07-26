@@ -1,22 +1,22 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { SubmitHandler, useForm } from "react-hook-form";
-import DashBoardNav from "~/components/DashBoardNav";
-import useCheckAccess  from "~/hooks/useCheckAccess";
+import Nav from "~/components/Nav";
+import useAccountCheckAccess  from "~/hooks/useAccountCheckAccess";
 import useSearchUser from "~/hooks/useSearchUser";
 import { User } from "~/server/db/schema";
-import usePageLoader from "~/hooks/usePageLoader";
+import useAccountIdParser from "~/hooks/useAccountIdParser";
 import Skeleton from "~/components/Skeleton";
 import { api } from "~/utils/api";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/router";
-import { AccountContext } from "~/context/account";
 import { useContext } from "react";
-import { UserContext } from "~/context/user";
 import NoAccess from "~/components/NoAccess";
+import { AppContext } from "~/context/app";
+import Spinner from "~/components/Spinner";
 
-const AddAdminPage: NextPage = () => {
-  usePageLoader();
+const NewViewerPage: NextPage = () => {
+  useAccountIdParser();
   return (
     <>
       <Head>
@@ -32,7 +32,7 @@ const AddAdminPage: NextPage = () => {
 }
 
 function Page() {
-  const { adminAccess } = useCheckAccess();
+  const { adminAccess } = useAccountCheckAccess();
   if (adminAccess) {
     return (
       <AdminContent />
@@ -48,23 +48,28 @@ type Form = {
   email: string
 }
 function AdminContent() {
-  const { user: self } = useContext(UserContext);
-  const { id: accountId } = useContext(AccountContext);
+  const { account, user: self } = useContext(AppContext);
   const { register, handleSubmit } = useForm<Form>();
   const { search, user, loading } = useSearchUser();
 
   const onSubmit: SubmitHandler<Form> = async ({ email }) => {
     if (self && self.email === email) {
-      toast.error("You can't add yourself as an admin");
+      toast.error("You can't add yourself as a viewer");
       return;
     }
     search(email);
   }
 
+  if (!account) {
+    return (
+      <Spinner />
+    )
+  }
+
   return (
     <>
-      <h1 className='text-3xl'>Add admin for account {accountId}</h1>
-      <DashBoardNav />
+      <h1 className='text-3xl'>Add viewer for account {account.id}</h1>
+      <Nav />
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4">
         <label htmlFor='description'>Email</label>
@@ -121,8 +126,7 @@ interface UserFoundProps {
 }
 function UserFound({ user }: UserFoundProps) {
   const router = useRouter();
-  const { user: self } = useContext(UserContext);
-  const { account } = useContext(AccountContext);
+  const { account, user: self } = useContext(AppContext);
   const { data: checkAdmin } = api.admin.checkAccess.useQuery({
     userId: user.id,
     accountId: account?.id
@@ -131,7 +135,7 @@ function UserFound({ user }: UserFoundProps) {
     userId: user.id,
     accountId: account?.id
   });
-  const { mutateAsync: addAdmin } = api.admin.new.useMutation();
+  const { mutateAsync: addViewer } = api.viewer.new.useMutation();
 
   return (
     <>
@@ -156,7 +160,7 @@ function UserFound({ user }: UserFoundProps) {
           }
 
           try {
-            await addAdmin({
+            await addViewer({
               accountId: account.id,
               userId: user.id
             });
@@ -164,14 +168,14 @@ function UserFound({ user }: UserFoundProps) {
             toast.success("Viewer added");
             router.push(`/dashboard/accounts/${account}`);
           } catch (e) {
-            toast.error("Failed to add admin");
+            toast.error("Failed to add viewer");
           }
         }}
       >
-        Add as admin
+        Add as viewer
       </button>
     </>
   )
 }
 
-export default AddAdminPage;
+export default NewViewerPage;

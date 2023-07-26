@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-function DashBoardNav() {
+function Nav() {
   return (
     <nav>
       <ul className='flex flex-col underline'>
@@ -12,4 +12,4 @@ function DashBoardNav() {
   );
 }
 
-export default DashBoardNav;
+export default Nav;
