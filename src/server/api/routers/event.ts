@@ -9,33 +9,31 @@ import { getDateString } from "~/utils/date";
 export const eventRouter = createTRPCRouter({
   get: privateProcedure
     .input(z.object({
-      id: z.number().optional()
+      eventId: z.number().optional()
     }))
     .query(async ({ input, ctx }): Promise<Event | null> => {
-      if (!input.id) {
+      const { eventId } = input;
+
+      if (!eventId) {
         return null;
       }
 
-      let event: Event | undefined;
       try {
-        event = await ctx.db.query.events.findFirst({
-          where: eq(events.id, input.id),
+        const event = await ctx.db.query.events.findFirst({
+          where: eq(events.id, eventId),
         }).execute();
+
+        if (!event) {
+          return null;
+        }
+
+        return event;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Account retrieval failed",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Event retrieval failed",
         })
       }
-
-      if (!event) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Account not found",
-        })
-      }
-
-      return event;
     }),
 
   new: privateProcedure
@@ -43,18 +41,23 @@ export const eventRouter = createTRPCRouter({
       name: z.string(),
       description: z.string().optional().nullable(),
       income: z.number(),
+      saving: z.number(),
       accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<Event> => {
+      const { name, description, income, saving, accountId } = input;
+
       const now = new Date();
+      const dateString = getDateString(now);
 
       const newEvent: NewEvent = {
-        name: input.name,
-        description: input.description,
-        income: input.income,
-        accountId: input.accountId,
-        createdAt: getDateString(now),
-        updatedAt: getDateString(now),
+        name,
+        description: description || null,
+        income,
+        saving,
+        accountId,
+        createdAt: dateString,
+        updatedAt: dateString,
       }
 
       try {
@@ -62,8 +65,8 @@ export const eventRouter = createTRPCRouter({
         return event;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Failed to create event",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Event creation failed",
         })
       }
     }),

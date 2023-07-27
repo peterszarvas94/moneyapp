@@ -1,9 +1,10 @@
-import type { Account, AccountViewer, NewAccountViewer, User } from "~/server/db/schema";
+import type { Account, AccountViewer, NewAccountViewer } from "~/server/db/schema";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { accountViewers } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
+import { getDateString } from "~/utils/date";
 
 export const viewerRouter = createTRPCRouter({
   new: privateProcedure
@@ -11,24 +12,24 @@ export const viewerRouter = createTRPCRouter({
       userId: z.number(),
       accountId: z.number(),
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }): Promise<AccountViewer> => {
+      const { userId: viewerId, accountId } = input;
+
       const newAccountViewer: NewAccountViewer = {
-        viewerId: input.userId,
-        accountId: input.accountId,
+        viewerId,
+        accountId,
+        createdAt: getDateString(new Date),
       }
 
-      let accountViewer: AccountViewer;
       try {
-        const mutation = ctx.db.insert(accountViewers).values(newAccountViewer).returning();
-        accountViewer = await mutation.get();
+        const accountViewer = await ctx.db.insert(accountViewers).values(newAccountViewer).returning().get();
+        return accountViewer;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create account viewer",
+          message: "Account viewer creation failed",
         })
       }
-
-      return accountViewer;
     }),
 
   getAccounts: privateProcedure
@@ -36,70 +37,27 @@ export const viewerRouter = createTRPCRouter({
       userId: z.number().optional(),
     }))
     .query(async ({ input, ctx }): Promise<Account[] | null> => {
-      if (input.userId === undefined) {
+      const { userId: viewerId } = input;
+
+      if (!viewerId) {
         return null;
       }
 
-      // get accounts for viewer
-      let res: {
-        account: Account
-      }[] = [];
-
-      if (!input.userId) {
-        return res.map((r) => r.account);
-      }
-
       try {
-        res = await ctx.db.query.accountViewers.findMany({
-          columns: {},
-          where: eq(accountViewers.viewerId, input.userId),
+        const query = await ctx.db.query.accountViewers.findMany({
+          where: eq(accountViewers.viewerId, viewerId),
           with: {
             account: true,
           },
         }).execute();
+        const account = query.map((r) => r.account);
+        return account;
       } catch (e) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Accounts not found for viewer",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Account search for viewer failed",
         })
       }
-
-      // return accounts
-      const accounts: Account[] = res.map((r) => r.account);
-      return accounts;
-    }),
-
-  checkViewerAccess: privateProcedure
-    .input(z.object({
-      userId: z.number(),
-      accountId: z.number(),
-    }))
-    .mutation(async ({ input, ctx }): Promise<boolean> => {
-      // check if user is an viewer of the account
-      let res: AccountViewer | undefined;
-      try {
-        res = await ctx.db.query.accountViewers.findFirst({
-          columns: {
-            viewerId: true,
-            accountId: true,
-          },
-          where: and(
-            eq(accountViewers.accountId, input.accountId),
-            eq(accountViewers.viewerId, input.userId),
-          ),
-        })
-      } catch (e) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Account not found for viewer",
-        })
-      }
-
-      if (res === undefined) {
-        return false;
-      }
-
-      return true;
     }),
 
   checkAccess: privateProcedure
@@ -108,34 +66,30 @@ export const viewerRouter = createTRPCRouter({
       accountId: z.number().optional(),
     }))
     .query(async ({ input, ctx }): Promise<boolean> => {
-      if (input.userId === undefined || input.accountId === undefined) {
+      const { userId: viewerId, accountId } = input;   
+
+      if (!viewerId || !accountId) {
         return false;
       }
 
-      // check if user is an admin of the account
-      let res: AccountViewer | undefined;
       try {
-        res = await ctx.db.query.accountViewers.findFirst({
+        const query = await ctx.db.query.accountViewers.findFirst({
           where: and(
-            eq(accountViewers.accountId, input.accountId),
-            eq(accountViewers.viewerId, input.userId),
+            eq(accountViewers.accountId, accountId),
+            eq(accountViewers.viewerId, viewerId),
           ),
-        })
+        });
+        if (!query) {
+          return false;
+        }
+        return true;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
+          code: "INTERNAL_SERVER_ERROR",
           message: "Viewer access check failed",
         })
       }
-
-      if (res === undefined) {
-        return false;
-      }
-
-      return true;
     }),
-
-
 
   delete: privateProcedure
     .input(z.object({
@@ -143,18 +97,19 @@ export const viewerRouter = createTRPCRouter({
       accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { userId: viewerId, accountId } = input;
+
       try {
         await ctx.db.delete(accountViewers).where(and(
-          eq(accountViewers.accountId, input.accountId),
-          eq(accountViewers.viewerId, input.userId),
+          eq(accountViewers.accountId, accountId),
+          eq(accountViewers.viewerId, viewerId),
         )).run();
+        return true;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete account admin",
+          message: "Viewer deletion failed",
         })
       }
-
-      return true;
     }),
 });

@@ -6,6 +6,7 @@ import { AppContext } from "~/context/app";
 import AdminList from "./AdminList";
 import ViewerList from "./ViewerList";
 import EventList from "./EventList";
+import AccountDetails from "./AccountDetails";
 
 function AdminContent() {
   const { account, refetch, } = useContext(AppContext);
@@ -40,7 +41,9 @@ function AdminContent() {
       >
         Add new viewer
       </Link>
- 
+
+      <AccountDetails />
+
       <EventList />
       <Link
         className="underline"

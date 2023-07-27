@@ -1,6 +1,7 @@
 import { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import { parse } from "path";
 import { useContext } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
@@ -47,6 +48,7 @@ type NewEvent = {
   name: string,
   description: string,
   income: string,
+  savings: string,
 }
 function AdminContent() {
   const router = useRouter();
@@ -54,13 +56,23 @@ function AdminContent() {
   const { register, handleSubmit } = useForm<NewEvent>();
   const { mutateAsync: addEvent } = api.event.new.useMutation();
     
-  const onSubmit: SubmitHandler<NewEvent> = async ({ name, description, income }) => {
+  const onSubmit: SubmitHandler<NewEvent> = async ({ name, description, income, saving}) => {
     if (!account) {
       return;
     }
 
     const parsedIncome = parseInt(income);
     if (isNaN(parsedIncome)) {
+      return;
+    }
+    
+    const parsedSaving = parseInt(saving);
+    if (isNaN(parsedSaving)) {
+      return;
+    }
+
+    if (parsedSaving > parsedIncome) {
+      toast.error("Saving can't be greater than income");
       return;
     }
 
@@ -70,6 +82,7 @@ function AdminContent() {
         name,
         description,
         income: parsedIncome,
+        saving: parsedSaving,
       })
 
       router.push(`/dashboard/accounts/${account.id}`);
@@ -117,6 +130,18 @@ function AdminContent() {
           step={1}
           className='border-black border-2'
           {...register('income', { required: true })}
+          required
+        />
+
+        <label htmlFor='Saving'>{`Saving amount (${account.currency})`}</label>
+        <input
+          type='number'
+          id='saving'
+          min={0}
+          max={9007199254740991}
+          step={1}
+          className='border-black border-2'
+          {...register('saving', { required: true })}
           required
         />
 

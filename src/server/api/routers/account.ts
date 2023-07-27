@@ -1,40 +1,39 @@
-import type { Event, Account, NewAccount, UpdateAccount, User } from "~/server/db/schema";
+import type { Event, Account, NewAccount, User } from "~/server/db/schema";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { accountAdmins, accountViewers, accounts, events } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
+import { getDateString } from "~/utils/date";
 
 export const accountRouter = createTRPCRouter({
   get: privateProcedure
     .input(z.object({
-      id: z.number().optional()
+      accountId: z.number().optional()
     }))
     .query(async ({ input, ctx }): Promise<Account | null> => {
-      if (!input.id) {
+      const { accountId } = input;
+
+      if (!accountId) {
         return null;
       }
 
-      let account: Account | undefined;
       try {
-        account = await ctx.db.query.accounts.findFirst({
-          where: eq(accounts.id, input.id),
+        const account = await ctx.db.query.accounts.findFirst({
+          where: eq(accounts.id, accountId),
         }).execute();
+
+        if (!account) {
+          return null;
+        }
+
+        return account;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
+          code: "INTERNAL_SERVER_ERROR",
           message: "Account retrieval failed",
         })
       }
-
-      if (!account) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Account not found",
-        })
-      }
-
-      return account;
     }),
 
   new: privateProcedure
@@ -43,76 +42,81 @@ export const accountRouter = createTRPCRouter({
       description: z.string().optional().nullable(),
       currency: z.string()
     }))
-    .mutation(async ({ input, ctx }) => {
-      // create new account 
+    .mutation(async ({ input, ctx }): Promise<Account> => {
+      const now = new Date();
+      const dateString = getDateString(now);
+
+      const { name, description, currency } = input;
+
       const newAccount: NewAccount = {
-        name: input.name,
-        description: input.description,
-        currency: input.currency
+        name,
+        description: description || null,
+        currency: currency,
+        createdAt: dateString,
+        updatedAt: dateString,
       }
 
-      let account: Account;
       try {
-        const mutation = ctx.db.insert(accounts).values(newAccount).returning();
-        account = await mutation.get();
+        const account = await ctx.db.insert(accounts).values(newAccount).returning().get();
+        return account;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
+          code: "INTERNAL_SERVER_ERROR",
           message: "Account creation failed",
         })
       }
-
-      return account;
     }),
 
-  edit: privateProcedure
+  update: privateProcedure
     .input(z.object({
-      id: z.number(),
-      name: z.string().optional(),
-      description: z.string().optional().nullable(),
-      currency: z.string().optional()
+      accountId: z.number(),
+      name: z.string(),
+      description: z.string(),
+      currency: z.string()
     }))
     .mutation(async ({ input, ctx }): Promise<Account> => {
-      let data: UpdateAccount = {};
-      if (!!input.name) {
-        data.name = input.name;
-      }
-      if (!!input.description) {
-        data.description = input.description;
-      }
-      if (!!input.currency) {
-        data.currency = input.currency;
+
+      const { accountId, name, description, currency } = input;
+
+      let data: {
+        name: string,
+        description: string | null,
+        currency: string,
+        updatedAt: string,
+      } = {
+        name,
+        description: description || null,
+        currency,
+        updatedAt: getDateString(new Date()),
       }
 
-      let account: Account;
       try {
-        const mutation = ctx.db.update(accounts).set(data).where(eq(accounts.id, input.id)).returning();
-        account = await mutation.get();
+        const account = await ctx.db.update(accounts).set(data).where(eq(accounts.id, accountId)).returning().get();
+        return account;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
+          code: "INTERNAL_SERVER_ERROR",
           message: "Account update failed",
         })
       }
-
-      return account;
     }),
 
   delete: privateProcedure
     .input(z.object({
-      id: z.number(),
+      accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { accountId } = input;
+
       try {
-        await ctx.db.delete(accounts).where(eq(accounts.id, input.id)).run();
+        await ctx.db.delete(accounts).where(eq(accounts.id, accountId)).run();
+        return true;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
+          code: "INTERNAL_SERVER_ERROR",
           message: "Account deletion failed",
         })
       }
-
-      return true;
     }),
 
   getAdmins: privateProcedure
@@ -120,47 +124,27 @@ export const accountRouter = createTRPCRouter({
       accountId: z.number().optional(),
     }))
     .query(async ({ input, ctx }): Promise<User[] | null> => {
-      if (input.accountId === undefined) {
+      const { accountId } = input;
+
+      if (!accountId) {
         return null;
       }
 
-      let accounts: {
-        adminId: number;
-        accountId: number;
-        admin: {
-          id: number;
-          name: string;
-          email: string;
-          clerkId: string;
-        };
-      }[];
       try {
-        accounts = await ctx.db.query.accountAdmins.findMany({
-          columns: {
-            accountId: true,
-            adminId: true,
-          },
-          where: eq(accountAdmins.accountId, input.accountId),
+        const query = await ctx.db.query.accountAdmins.findMany({
+          where: eq(accountAdmins.accountId, accountId),
           with: {
-            admin: {
-              columns: {
-                id: true,
-                name: true,
-                email: true,
-                clerkId: true,
-              }
-            }
+            admin: true,
           }
         }).execute();
+        const admins = query.map((a) => a.admin);
+        return admins;
       } catch (e) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Account not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Admin search for account failed",
         })
       }
-
-      const admins = accounts.map((a) => a.admin);
-      return admins;
     }),
 
   getViewers: privateProcedure
@@ -168,47 +152,27 @@ export const accountRouter = createTRPCRouter({
       accountId: z.number().optional(),
     }))
     .query(async ({ input, ctx }): Promise<User[] | null> => {
-      if (input.accountId === undefined) {
+      const { accountId } = input;
+
+      if (!accountId) {
         return null;
       }
 
-      let accounts: {
-        viewerId: number;
-        accountId: number;
-        viewer: {
-          id: number;
-          name: string;
-          email: string;
-          clerkId: string;
-        };
-      }[];
       try {
-        accounts = await ctx.db.query.accountViewers.findMany({
-          columns: {
-            viewerId: true,
-            accountId: true,
-          },
-          where: eq(accountViewers.accountId, input.accountId),
+        const query = await ctx.db.query.accountViewers.findMany({
+          where: eq(accountViewers.accountId, accountId),
           with: {
-            viewer: {
-              columns: {
-                id: true,
-                name: true,
-                email: true,
-                clerkId: true,
-              }
-            }
+            viewer: true,
           }
         }).execute();
+        const viewers = query.map((a) => a.viewer);
+        return viewers;
       } catch (e) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Account not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Viewer search for account failed",
         })
       }
-
-      const viewers = accounts.map((a) => a.viewer);
-      return viewers;
     }),
 
   getEvents: privateProcedure
@@ -216,23 +180,23 @@ export const accountRouter = createTRPCRouter({
       accountId: z.number().optional(),
     }))
     .query(async ({ input, ctx }): Promise<Event[] | null> => {
-      if (!input.accountId) {
+      const { accountId } = input;
+
+      if (!accountId) {
         return null;
       }
 
-      let res: Event[];
       try {
-        res = await ctx.db.query.events.findMany({
-          where: eq(events.accountId, input.accountId),
+        const queriedEvents = await ctx.db.query.events.findMany({
+          where: eq(events.accountId, accountId),
         }).execute();
+        return queriedEvents;
       } catch (e) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Events not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Event search for account failed",
         })
       }
-
-      return res;
     }),
 
   deleteAdmins: privateProcedure
@@ -240,16 +204,17 @@ export const accountRouter = createTRPCRouter({
       accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { accountId } = input;
+
       try {
-        await ctx.db.delete(accountAdmins).where(eq(accountAdmins.accountId, input.accountId)).run();
+        await ctx.db.delete(accountAdmins).where(eq(accountAdmins.accountId, accountId)).run();
+        return true;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Failed to delete account admins",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Admins deletion failed",
         })
       }
-
-      return true;
     }),
 
   deleteViewers: privateProcedure
@@ -257,16 +222,17 @@ export const accountRouter = createTRPCRouter({
       accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { accountId } = input;
+
       try {
-        await ctx.db.delete(accountViewers).where(eq(accountViewers.accountId, input.accountId)).run();
+        await ctx.db.delete(accountViewers).where(eq(accountViewers.accountId, accountId)).run();
+        return true;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Failed to delete account admins",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Viewers deletion failed",
         })
       }
-
-      return true;
     }),
 
   deleteEvents: privateProcedure
@@ -274,15 +240,16 @@ export const accountRouter = createTRPCRouter({
       accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { accountId } = input;
+
       try {
-        await ctx.db.delete(events).where(eq(events.accountId, input.accountId)).run();
+        await ctx.db.delete(events).where(eq(events.accountId, accountId)).run();
+        return true;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Failed to delete account events",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Events deletion failed",
         })
       }
-
-      return true;
     }),
 });

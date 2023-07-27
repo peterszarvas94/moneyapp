@@ -1,9 +1,10 @@
-import type { Account, AccountAdmin, NewAccountAdmin, User } from "~/server/db/schema";
+import type { Account, AccountAdmin, NewAccountAdmin } from "~/server/db/schema";
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
 import { accountAdmins } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
+import { getDateString } from "~/utils/date";
 
 export const adminRouter = createTRPCRouter({
   new: privateProcedure
@@ -11,24 +12,25 @@ export const adminRouter = createTRPCRouter({
       userId: z.number(),
       accountId: z.number(),
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }): Promise<AccountAdmin> => {
+      const now = new Date();
+      const { userId: adminId, accountId } = input;
+
       const newAccountAdmin: NewAccountAdmin = {
-        adminId: input.userId,
-        accountId: input.accountId,
+        adminId,
+        accountId,
+        createdAt: getDateString(now),
       }
 
-      let accountAdmin: AccountAdmin;
       try {
-        const mutation = ctx.db.insert(accountAdmins).values(newAccountAdmin).returning();
-        accountAdmin = await mutation.get();
+        const accountAdmin = ctx.db.insert(accountAdmins).values(newAccountAdmin).returning().get();
+        return accountAdmin;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create account admin",
+          message: "Account admin creation failed",
         })
       }
-
-      return accountAdmin;
     }),
 
   getAccounts: privateProcedure
@@ -36,66 +38,27 @@ export const adminRouter = createTRPCRouter({
       userId: z.number().optional(),
     }))
     .query(async ({ input, ctx }): Promise<Account[] | null> => {
-      if (input.userId === undefined) {
+      const { userId: adminId } = input;
+
+      if (!adminId) {
         return null;
       }
 
-      // get accounts for admin
-      let res: {
-        account: Account
-      }[] = [];
-
       try {
-        res = await ctx.db.query.accountAdmins.findMany({
-          columns: {},
-          where: eq(accountAdmins.adminId, input.userId),
+        const query = await ctx.db.query.accountAdmins.findMany({
+          where: eq(accountAdmins.adminId, adminId),
           with: {
             account: true,
           },
         }).execute();
+        const accounts: Account[] = query.map((r) => r.account);
+        return accounts;
       } catch (e) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Accounts not found for admin",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Account search for admin failed",
         })
       }
-
-      // return accounts
-      const accounts: Account[] = res.map((r) => r.account);
-      return accounts;
-    }),
-
-  checkAdminAccess: privateProcedure
-    .input(z.object({
-      userId: z.number(),
-      accountId: z.number(),
-    }))
-    .mutation(async ({ input, ctx }): Promise<boolean> => {
-      // check if user is an admin of the account
-      let res: AccountAdmin | undefined;
-      try {
-        res = await ctx.db.query.accountAdmins.findFirst({
-          columns: {
-            adminId: true,
-            accountId: true,
-          },
-          where: and(
-            eq(accountAdmins.accountId, input.accountId),
-            eq(accountAdmins.adminId, input.userId),
-          ),
-        })
-      } catch (e) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Account not found for admin",
-        })
-      }
-
-      if (res === undefined) {
-        return false;
-      }
-
-      return true;
     }),
 
   checkAccess: privateProcedure
@@ -104,31 +67,29 @@ export const adminRouter = createTRPCRouter({
       accountId: z.number().optional(),
     }))
     .query(async ({ input, ctx }): Promise<boolean> => {
-      if (input.userId === undefined || input.accountId === undefined) {
+      const { userId: adminId, accountId } = input;
+      
+      if (!adminId || !accountId) {
         return false;
       }
 
-      // check if user is an admin of the account
-      let res: AccountAdmin | undefined;
       try {
-        res = await ctx.db.query.accountAdmins.findFirst({
+        const query = await ctx.db.query.accountAdmins.findFirst({
           where: and(
-            eq(accountAdmins.accountId, input.accountId),
-            eq(accountAdmins.adminId, input.userId),
+            eq(accountAdmins.accountId, accountId),
+            eq(accountAdmins.adminId, adminId),
           ),
         })
+        if (!query) {
+          return false;
+        }
+        return true;
       } catch (e) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
+          code: "INTERNAL_SERVER_ERROR",
           message: "Admin access check failed",
         })
       }
-
-      if (res === undefined) {
-        return false;
-      }
-
-      return true;
     }),
 
   delete: privateProcedure
@@ -137,18 +98,20 @@ export const adminRouter = createTRPCRouter({
       accountId: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { userId: adminId, accountId } = input;
+
       try {
         await ctx.db.delete(accountAdmins).where(and(
-          eq(accountAdmins.accountId, input.accountId),
-          eq(accountAdmins.adminId, input.userId),
+          eq(accountAdmins.accountId, accountId),
+          eq(accountAdmins.adminId, adminId),
         )).run();
+
+        return true;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete account admin",
+          message: "Account admin deletion failed",
         })
       }
-
-      return true;
     }),
 });

@@ -64,7 +64,7 @@ function AccountDetails() {
                 }
 
                 try {
-                  await deleteAccount({ id: account.id })
+                  await deleteAccount({ accountId: account.id })
                   toast.success("Account deleted");
                   router.push("/dashboard/accounts");
                 } catch (e) {

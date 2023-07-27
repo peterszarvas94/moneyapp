@@ -1,10 +1,7 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { useContext } from "react";
-import Nav from "~/components/Nav";
 import NoAccess from "~/components/NoAccess";
-import Spinner from "~/components/Spinner";
-import { AppContext } from "~/context/app";
+import AdminContent from "~/components/accounts/accountId/events/eventId/admin/Content";
 import useAccountCheckAccess from "~/hooks/useAccountCheckAccess";
 import useAccountIdParser from "~/hooks/useAccountIdParser";
 import useEventIdParser from "~/hooks/useEventIdParser";
@@ -44,23 +41,6 @@ function Page() {
 
   return (
     <NoAccess />
-  )
-}
-
-function AdminContent() {
-  const { event } = useContext(AppContext);
-
-  if (!event) {
-    return (
-      <Spinner />
-    )
-  }
-
-  return (
-    <>
-      <h1 className='text-3xl'>You are admin of Event {event.id}</h1>
-      <Nav />
-    </>
   )
 }
 

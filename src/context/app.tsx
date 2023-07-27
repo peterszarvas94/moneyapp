@@ -34,10 +34,10 @@ function ContextProvider({ children }: Props) {
 
   const [accountId, setAccountId] = useState<number | undefined>(undefined);
   const [access, setAccess] = useState<boolean>(false);
-  const { data: account, refetch } = api.account.get.useQuery({ id: access ? accountId : undefined });
+  const { data: account, refetch } = api.account.get.useQuery({ accountId: access ? accountId : undefined });
 
   const [eventId, setEventId] = useState<number | undefined>(undefined);
-  const { data: event } = api.event.get.useQuery({ id: access ? eventId : undefined });
+  const { data: event } = api.event.get.useQuery({ eventId: access ? eventId : undefined });
 
   return (
     <AppContext.Provider value={{

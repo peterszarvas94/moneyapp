@@ -1,5 +1,4 @@
 import type { NextPage } from "next";
-import type { UpdateAccount } from "~/server/db/schema";
 import Head from "next/head";
 import { toast } from "react-hot-toast";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -43,18 +42,24 @@ function Page() {
   )
 }
 
+type Form = {
+  name?: string;
+  description?: string;
+  currency?: string;
+}
+
 function AdminContent() {
   const { account } = useContext(AppContext);
-  const { register, handleSubmit } = useForm<UpdateAccount>();
-  const { mutateAsync: editAccount } = api.account.edit.useMutation();
+  const { register, handleSubmit } = useForm<Form>();
+  const { mutateAsync: editAccount } = api.account.update.useMutation();
   const router = useRouter();
-  const onSubmit: SubmitHandler<UpdateAccount> = async (data: UpdateAccount) => {
+  const onSubmit: SubmitHandler<Form> = async (data: Form) => {
     if (!account) {
       return;
     }
 
     try {
-      await editAccount({ id: account.id, ...data });
+      await editAccount({ accountId: account.id, ...data });
       toast.success('Account updated');
     } catch (e) {
       toast.error('Error updating account');

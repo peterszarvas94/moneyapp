@@ -6,7 +6,9 @@ export const users = sqliteTable('users', {
   id: integer('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull(),
-  clerkId: text('clerk_id').notNull()
+  clerkId: text('clerk_id').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 })
 
 export type User = InferModel<typeof users, 'select'>
@@ -23,16 +25,12 @@ export const accounts = sqliteTable('accounts', {
   name: text('name').notNull(),
   description: text('description'),
   currency: text('currency').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 })
 
 export type Account = InferModel<typeof accounts, 'select'>
 export type NewAccount = InferModel<typeof accounts, 'insert'>
-export type UpdateAccount = {
-  id?: number,
-  name?: string,
-  description?: string | null,
-  currency?: string,
-}
 
 export const accountRelations = relations(accounts, ({ many }) => ({
   accountAdmins: many(accountAdmins),
@@ -44,6 +42,7 @@ export const accountRelations = relations(accounts, ({ many }) => ({
 export const accountAdmins = sqliteTable('account_admins', {
   adminId: integer('admin_id').notNull().references(() => users.id),
   accountId: integer('account_id').notNull().references(() => accounts.id),
+  createdAt: text('created_at').notNull(),
 }, (t) => ({
   pk: primaryKey(t.adminId, t.accountId)
 }))
@@ -66,6 +65,7 @@ export const accountAdminsRelations = relations(accountAdmins, ({ one }) => ({
 export const accountViewers = sqliteTable('account_viewers', {
   viewerId: integer('viewer_id').notNull().references(() => users.id),
   accountId: integer('account_id').notNull().references(() => accounts.id),
+  createdAt: text('created_at').notNull(),
 }, (t) => ({
   pk: primaryKey(t.viewerId, t.accountId)
 }))
@@ -85,14 +85,15 @@ export const accountViewersRelations = relations(accountViewers, ({ one }) => ({
 }))
 
 // event
-export const events = sqliteTable('event', {
+export const events = sqliteTable('events', {
   id: integer('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
-  income: integer('amount').notNull(),
+  income: integer('income').notNull(),
+  saving: integer('saving').notNull(),
+  accountId: integer('account_id').notNull().references(() => accounts.id),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-  accountId: integer('account_id').notNull().references(() => accounts.id),
 })
 
 export type Event = InferModel<typeof events, 'select'>
@@ -103,26 +104,23 @@ export const eventRelations = relations(events, ({ one, many }) => ({
     fields: [events.accountId],
     references: [accounts.id],
   }),
-  savings: many(savings),
+  payments: many(payments),
 }))
 
-// savings
-export const savings = sqliteTable('savings', {
+// payment
+export const payments = sqliteTable('payments', {
   id: integer('id').primaryKey(),
-  name: text('name').notNull().notNull(),
-  description: text('description'),
-  amount: integer('amount').notNull(),
+  eventId: integer('event_id').notNull().references(() => events.id),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-  eventId: integer('event_id').notNull().references(() => events.id),
 })
 
-export type Saving = InferModel<typeof savings, 'select'>
-export type NewSaving = InferModel<typeof savings, 'insert'>
+export type Payment = InferModel<typeof payments, 'select'>
+export type NewPayment = InferModel<typeof payments, 'insert'>
 
-export const savingRelations = relations(savings, ({ one }) => ({
+export const paymentRelations = relations(payments, ({ one }) => ({
   event: one(events, {
-    fields: [savings.eventId],
+    fields: [payments.eventId],
     references: [events.id],
   }),
 }))
