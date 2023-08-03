@@ -1,13 +1,34 @@
 import type { Account, AccountViewer, NewAccountViewer } from "~/server/db/schema";
 import { z } from "zod";
-import { createTRPCRouter, privateProcedure } from "~/server/api/trpc";
+import { accessedProcedure, adminProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
 import { accountViewers } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { getDateString } from "~/utils/date";
 
 export const viewerRouter = createTRPCRouter({
-  new: privateProcedure
+    getAccounts: loggedInProcedure
+    .query(async ({ ctx }): Promise<Account[] | null> => {
+      const { user: { id: viewerId } } = ctx;
+
+      try {
+        const query = await ctx.db.query.accountViewers.findMany({
+          where: eq(accountViewers.viewerId, viewerId),
+          with: {
+            account: true,
+          },
+        }).execute();
+        const accounts: Account[] = query.map((r) => r.account);
+        return accounts;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Account search for viewer failed",
+        })
+      }
+    }),
+
+  new: adminProcedure
     .input(z.object({
       userId: z.number(),
       accountId: z.number(),
@@ -32,41 +53,46 @@ export const viewerRouter = createTRPCRouter({
       }
     }),
 
-  getAccounts: privateProcedure
+  delete: adminProcedure
     .input(z.object({
-      userId: z.number().optional(),
+      userId: z.number(),
     }))
-    .query(async ({ input, ctx }): Promise<Account[] | null> => {
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      const { user, accountId } = ctx;
       const { userId: viewerId } = input;
 
-      if (!viewerId) {
-        return null;
+      // this is not supposed to be happen, but just in case:
+      if (user.id === viewerId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Admin cannot delete themselves from viewers",
+        })
       }
 
       try {
-        const query = await ctx.db.query.accountViewers.findMany({
-          where: eq(accountViewers.viewerId, viewerId),
-          with: {
-            account: true,
-          },
-        }).execute();
-        const account = query.map((r) => r.account);
-        return account;
+        await ctx.db.delete(accountViewers).where(and(
+          eq(accountViewers.accountId, accountId),
+          eq(accountViewers.viewerId, viewerId),
+        )).run();
+        return true;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Account search for viewer failed",
+          message: "Account viewer deletion failed",
         })
       }
     }),
 
-  checkAccess: privateProcedure
+
+
+  // old code
+  checkAccess: loggedInProcedure
     .input(z.object({
       userId: z.number().optional(),
       accountId: z.number().optional(),
     }))
     .query(async ({ input, ctx }): Promise<boolean> => {
-      const { userId: viewerId, accountId } = input;   
+      const { userId: viewerId, accountId } = input;
 
       if (!viewerId || !accountId) {
         return false;
@@ -91,25 +117,4 @@ export const viewerRouter = createTRPCRouter({
       }
     }),
 
-  delete: privateProcedure
-    .input(z.object({
-      userId: z.number(),
-      accountId: z.number(),
-    }))
-    .mutation(async ({ input, ctx }): Promise<true> => {
-      const { userId: viewerId, accountId } = input;
-
-      try {
-        await ctx.db.delete(accountViewers).where(and(
-          eq(accountViewers.accountId, accountId),
-          eq(accountViewers.viewerId, viewerId),
-        )).run();
-        return true;
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Viewer deletion failed",
-        })
-      }
-    }),
 });

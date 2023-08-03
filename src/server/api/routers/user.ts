@@ -1,13 +1,82 @@
 import type { NewUser, User } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, loggedInProcedure, publicProcedure } from "~/server/api/trpc";
 import { users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { getDateString } from "~/utils/date";
 
 export const userRouter = createTRPCRouter({
-  get: privateProcedure
+  new: publicProcedure
+    .input(z.object({
+      name: z.string(),
+      email: z.string().email(),
+      clerkId: z.string(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      const now = new Date();
+
+      const { name, email, clerkId } = input;
+
+      const newUser: NewUser = {
+        name,
+        email,
+        clerkId,
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      try {
+        await ctx.db.insert(users).values(newUser);
+        return true;
+      } catch (e) {
+        console.log(e);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "User creation failed",
+        })
+      }
+    }),
+
+  getByClerkId: loggedInProcedure
+    .query(async ({ ctx }): Promise<User | null> => {
+      const { clerkId } = ctx;
+      try {
+        const user = await ctx.db.query.users.findFirst({
+          where: eq(users.clerkId, clerkId),
+        });
+        if (!user) {
+          return null;
+        }
+        return user;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "User retrieval by clerkId failed",
+        })
+      }
+    }),
+
+  getSelf: loggedInProcedure
+    .query(async ({ ctx }): Promise<User | null> => {
+      const { clerkId } = ctx;
+      try {
+        const user = await ctx.db.query.users.findFirst({
+          where: eq(users.clerkId, clerkId),
+        });
+        if (!user) {
+          return null;
+        }
+        return user;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "User retrieval by userId failed",
+        })
+      }
+    }),
+
+  get: loggedInProcedure
     .input(z.object({
       userId: z.number().optional()
     }))
@@ -34,34 +103,7 @@ export const userRouter = createTRPCRouter({
       }
     }),
 
-  getByClerkId: privateProcedure
-    .input(z.object({
-      clerkId: z.string().optional()
-    }))
-    .query(async ({ input, ctx }): Promise<User | null> => {
-      const { clerkId } = input;
-
-      if (!clerkId) {
-        return null;
-      }
-
-      try {
-        const user = await ctx.db.query.users.findFirst({
-          where: eq(users.clerkId, clerkId),
-        });
-        if (!user) {
-          return null;
-        }
-        return user;
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "User retrieval by clerkId failed",
-        })
-      }
-    }),
-
-  getByEmail: privateProcedure
+  getByEmail: loggedInProcedure
     .input(z.object({
       email: z.string()
     }))
@@ -84,59 +126,23 @@ export const userRouter = createTRPCRouter({
       }
     }),
 
-  new: publicProcedure
+  update: publicProcedure
     .input(z.object({
-      name: z.string(),
-      email: z.string().email(),
       clerkId: z.string(),
-    }))
-    .mutation(async ({ input, ctx }): Promise<User> => {
-      const now = new Date();
-      const dateString = getDateString(now);
-
-      const { name, email, clerkId } = input;
-
-      const newUser: NewUser = {
-        name,
-        email,
-        clerkId,
-        createdAt: dateString,
-        updatedAt: dateString,
-      }
-
-      try {
-        const user = await ctx.db.insert(users).values(newUser).returning().get();
-        return user;
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Account creation failed",
-        })
-      }
-    }),
-
-  update: privateProcedure
-    .input(z.object({
-      userId: z.number(),
       name: z.string(),
       email: z.string().email(),
     }))
-    .mutation(async ({ input, ctx }): Promise<User> => {
-      const { userId, name, email } = input;
-
-      let data: {
-        name: string,
-        email: string,
-        updatedAt: string,
-      } = {
-        name,
-        email,
-        updatedAt: getDateString(new Date()),
-      }
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      const { clerkId, name, email } = input;
 
       try {
-        const user = await ctx.db.update(users).set(data).where(eq(users.id, userId)).returning().get();
-        return user;
+        await ctx.db.update(users).set({
+          name,
+          email,
+          clerkId,
+          updatedAt: new Date(),
+        }).where(eq(users.clerkId, clerkId));
+        return true;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -145,14 +151,14 @@ export const userRouter = createTRPCRouter({
       }
     }),
 
-  delete: privateProcedure
+  delete: publicProcedure
     .input(z.object({
-      userId: z.number(),
+      clerkId: z.string(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
-      const { userId } = input;
+      const { clerkId } = input;
       try {
-        await ctx.db.delete(users).where(eq(users.id, userId)).run();
+        await ctx.db.delete(users).where(eq(users.clerkId, clerkId));
         return true;
       } catch (e) {
         throw new TRPCError({

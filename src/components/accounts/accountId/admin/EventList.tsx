@@ -1,23 +1,27 @@
 import Link from "next/link";
 import { useContext } from "react";
+import Card from "~/components/Card";
+import CardLink from "~/components/CardLink";
+import CardNoItem from "~/components/CardNoItem";
+import CardTitle from "~/components/CardTitle";
 import Skeleton from "~/components/Skeleton";
-import { AppContext } from "~/context/app";
+import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function EventList() {
   return (
-    <>
-      <div className="pt-6 italic">Events of this account:</div>
+    <Card>
+      <CardTitle title="Events" />
       <List />
-    </>
+    </Card>
   )
 }
 
 function List() {
-  const { account } = useContext(AppContext);
-  const { data: events } = api.account.getEvents.useQuery({ accountId: account?.id });
+  const { accountId } = useContext(AccountContext);
+  const { data: events } = api.account.getEvents.useQuery({ accountId });
 
-  if (!events || !account) {
+  if (!events) {
     return (
       <Skeleton />
     )
@@ -25,9 +29,7 @@ function List() {
 
   if (events.length === 0) {
     return (
-      <div>
-        No events
-      </div>
+      <CardNoItem>No events</CardNoItem>
     )
   }
 
@@ -36,12 +38,9 @@ function List() {
       {
         events.map((event) => (
           <li key={event.id} className="flex items-center">
-            <Link
-              className="underline"
-              href={`/dashboard/accounts/${account.id}/events/${event.id}`}
-            >
+            <CardLink url={`/accounts/${accountId}/events/${event.id}`}>
               {event.name}
-            </Link>
+            </CardLink>
           </li>
         ))
       }

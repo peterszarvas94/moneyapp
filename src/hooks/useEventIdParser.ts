@@ -1,11 +1,10 @@
-import { useContext, useEffect } from "react";
 import { useRouter } from "next/router";
-import { AppContext } from "~/context/app";
+import { useEffect, useState } from "react";
 
 function useEventIdParser() {
   const router = useRouter();
   const { eventId } = router.query;
-  const { setEventId } = useContext(AppContext);
+  const [realId, setRealId] = useState<number | null>(null);
 
   useEffect(() => {
     if (typeof eventId !== "string") {
@@ -15,10 +14,12 @@ function useEventIdParser() {
     if (isNaN(parsed)) {
       return;
     }
-    setEventId(parsed);
+    setRealId(parsed);
   }, [eventId]);
 
-  return;
+  return {
+    eventId: realId
+  }
 }
 
 export default useEventIdParser;

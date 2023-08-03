@@ -1,54 +1,27 @@
-/**
- * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
- * 1. You want to modify request context (see Part 1).
- * 2. You want to create a new middleware or type of procedure (see Part 3).
- *
- * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
- * need to use are documented accordingly near the end.
- */
-
 import type { CreateNextContextOptions } from "@trpc/server/adapters/next";
+import type { Access } from "~/utils/types";
 import superjson from "superjson";
 import { TRPCError, initTRPC } from "@trpc/server";
-import { ZodError } from "zod";
+import { ZodError, z } from "zod";
 import { db } from "~/server/db/db";
 import { getAuth } from "@clerk/nextjs/server";
+import { User, accountAdmins, accountViewers, users } from "../db/schema";
+import { and, eq } from "drizzle-orm";
 
-
-/**
- * 1. CONTEXT
- *
- * This section defines the "contexts" that are available in the backend API.
- *
- * These allow you to access things when processing a request, like the database, the session, etc.
- */
-
-/**
- * This is the actual context you will use in your router. It will be used to process every request
- * that goes through your tRPC endpoint.
- *
- * @see https://trpc.io/docs/context
- */
+// context:
 export const createTRPCContext = (opts: CreateNextContextOptions) => {
   const { req } = opts;
   const sesh = getAuth(req);
 
-  const userId = sesh.userId;
+  const { userId: clerkId } = sesh;
 
   return {
     db,
-    userId,
+    clerkId,
   };
 };
 
-/**
- * 2. INITIALIZATION
- *
- * This is where the tRPC API is initialized, connecting the context and transformer. We also parse
- * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
- * errors on the backend.
- */
-
+// init:
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
@@ -63,41 +36,123 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
   },
 });
 
-/**
- * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
- *
- * These are the pieces you use to build your tRPC API. You should import these a lot in the
- * "/src/server/api/routers" directory.
- */
-
-/**
- * This is how you create new routers and sub-routers in your tRPC API.
- *
- * @see https://trpc.io/docs/router
- */
+// router:
 export const createTRPCRouter = t.router;
 
-/**
- * Public (unauthenticated) procedure
- *
- * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
- * guarantee that a user querying is authorized, but you can still access user session data if they
- * are logged in.
- */
+// public:
 export const publicProcedure = t.procedure;
 
-const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.userId) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-    });
-  }
-  return next({
-    ctx: {
-      ...ctx,
-      userId: ctx.userId,
-    },
-  });
-});
+// middlewares:
+export const loggedInProcedure = publicProcedure
+  .use(async ({ ctx, next }) => {
+    const { clerkId } = ctx;
+    if (!clerkId) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "No clerkId found",
+      });
+    }
 
-export const privateProcedure = t.procedure.use(enforceUserIsAuthed);
+    let user: User | undefined;
+
+    try {
+      user = await ctx.db.query.users.findFirst({
+        where: eq(users.clerkId, clerkId),
+      });
+    } catch (e) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "User retrieval by clerkId failed",
+      })
+    }
+
+    if (!user) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "No user found",
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        clerkId,
+        user,
+      },
+    });
+  });
+
+export const accessedProcedure = loggedInProcedure
+  .input(z.object({
+    accountId: z.number()
+  }))
+  .use(async ({ input, ctx, next }) => {
+    const { user: { id: userId } } = ctx;
+    const { accountId } = input;
+
+    let access: Access | undefined;
+
+    try {
+      const admin = await ctx.db.query.accountAdmins.findFirst({
+        where: and(
+          eq(accountAdmins.adminId, userId),
+          eq(accountAdmins.accountId, accountId)
+        )
+      });
+
+      if (admin) {
+        access = "admin";
+      }
+    } catch (e) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Account admin retrieval failed",
+      })
+    }
+
+    try {
+      const viewer = await ctx.db.query.accountViewers.findFirst({
+        where: and(
+          eq(accountViewers.viewerId, userId),
+          eq(accountViewers.accountId, accountId)
+        )
+      });
+      if (viewer) {
+        access = "viewer";
+      }
+    } catch (e) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Account viewer retrieval failed",
+      })
+    }
+
+    if (!access) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "No access found",
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        access,
+        accountId,
+      },
+    });
+
+  });
+
+export const adminProcedure = accessedProcedure
+  .use(async ({ ctx, next }) => {
+    const { access } = ctx;
+    if (access !== "admin") {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "No admin access found",
+      });
+    }
+
+    return next();
+  });

@@ -1,8 +1,11 @@
 import * as schema from '~/server/db/schema';
-import { drizzle } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
 import { env } from '~/env.mjs';
+import { connect } from '@planetscale/database';
+import { drizzle } from 'drizzle-orm/planetscale-serverless';
 
-const client = createClient({ url: env.DB_URL, authToken: env.DB_TOKEN });
- 
+const client = connect({
+  // ssl is needed for planetscale, make sure to have '/?sslaccept=true' at the end
+  url: env.DB_URL,
+});
+
 export const db = drizzle(client, {schema});

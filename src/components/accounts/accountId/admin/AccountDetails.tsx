@@ -1,18 +1,14 @@
-import Link from "next/link";
-import { useRouter } from "next/router";
 import { useContext } from "react";
-import { toast } from "react-hot-toast";
+import Card from "~/components/Card";
+import CardLi from "~/components/CardLi";
+import CardTitle from "~/components/CardTitle";
 import Skeleton from "~/components/Skeleton";
-import { AppContext } from "~/context/app";
+import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function AccountDetails() {
-  const router = useRouter();
-  const { account } = useContext(AppContext);
-  const { mutateAsync: deleteAdmins } = api.account.deleteAdmins.useMutation();
-  const { mutateAsync: deleteEvents } = api.account.deleteEvents.useMutation();
-  const { mutateAsync: deleteViewers } = api.account.deleteViewers.useMutation();
-  const { mutateAsync: deleteAccount } = api.account.delete.useMutation();
+  const { accountId } = useContext(AccountContext);
+  const { data: account } = api.account.get.useQuery({ accountId });
 
   if (!account) {
     return (
@@ -21,63 +17,14 @@ function AccountDetails() {
   }
 
   return (
-    <>
-      <div className="pt-6 italic">Account details:</div>
+    <Card>
+      <CardTitle title="Account Details" />
       <ul>
-        <li>Name: {account.name}</li>
-        <li>Description: {account.description}</li>
-        <li>Currency: {account.currency}</li>
-        <li>
-          <Link
-            href={`/dashboard/accounts/${account.id}/edit`}
-            className="underline"
-          >
-            Edit
-          </Link>
-
-        </li>
-        <li>
-          <button
-            className="underline"
-            onClick={async () => {
-              if (confirm("Are you sure?")) {
-                try {
-                  await deleteViewers({
-                    accountId: account.id,
-                  })
-                } catch (e) { }
-
-                try {
-                  await deleteAdmins({
-                    accountId: account.id,
-                  })
-                } catch (e) {
-                  return;
-                }
-
-                try {
-                  await deleteEvents({
-                    accountId: account.id
-                  })
-                } catch (e) {
-                  return;
-                }
-
-                try {
-                  await deleteAccount({ accountId: account.id })
-                  toast.success("Account deleted");
-                  router.push("/dashboard/accounts");
-                } catch (e) {
-                  return;
-                }
-              }
-            }}
-          >
-            Delete
-          </button>
-        </li>
+        <CardLi>Name: {account.name}</CardLi>
+        <CardLi>Description: {account.description}</CardLi>
+        <CardLi>Currency: {account.currency}</CardLi>
       </ul>
-    </>
+    </Card>
   )
 }
 

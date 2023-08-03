@@ -2,23 +2,27 @@ import { useRouter } from "next/router";
 import { useContext } from "react";
 import { toast } from "react-hot-toast";
 import { TiDelete } from "react-icons/ti";
+import Card from "~/components/Card";
+import CardLi from "~/components/CardLi";
+import CardNoItem from "~/components/CardNoItem";
+import CardTitle from "~/components/CardTitle";
 import Skeleton from "~/components/Skeleton";
-import { AppContext } from "~/context/app";
+import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function ViewerList() {
   return (
-    <>
-      <div className="pt-6 italic">Viewers of this account:</div>
+    <Card>
+      <CardTitle title="Viewers" />
       <List />
-    </>
+    </Card>
   )
 }
 
 function List() {
-  const router = useRouter();
-  const { account, user: self } = useContext(AppContext);
-  const { data: viewers, refetch: getViewers } = api.account.getViewers.useQuery({ accountId: account?.id });
+  const { accountId } = useContext(AccountContext);
+  const { data: viewers, refetch: getViewers } = api.account.getViewers.useQuery({ accountId });
+  const { data: account } = api.account.get.useQuery({ accountId });
   const { mutateAsync: deleteViewer } = api.viewer.delete.useMutation();
 
   if (!viewers) {
@@ -29,7 +33,7 @@ function List() {
 
   if (viewers.length === 0) {
     return (
-      <div>No viewers</div>
+      <CardNoItem>No viewers</CardNoItem>
     )
   }
 
@@ -37,7 +41,7 @@ function List() {
     <ul>
       {
         viewers.map((viewer) => (
-          <li key={viewer.id} className="flex items-center">
+          <CardLi key={viewer.id}>
             <div>{`${viewer.name} (${viewer.email})`}</div>
             <button
               className="text-xl"
@@ -55,16 +59,12 @@ function List() {
                     toast.success('Viewer deleted');
                     getViewers();
                   } catch (e) { }
-
-                  if (self && self.id === viewer.id) {
-                    router.push("/dashboard/accounts");
-                  }
                 }
               }}
             >
-              <TiDelete />
+              <TiDelete className="hover:text-red-400"/>
             </button>
-          </li>
+          </CardLi>
         ))
       }
     </ul>

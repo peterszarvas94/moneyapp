@@ -1,11 +1,10 @@
-import { useContext, useEffect } from "react";
 import { useRouter } from "next/router";
-import { AppContext } from "~/context/app";
+import { useEffect, useState } from "react";
 
 function useAccountIdParser() {
   const router = useRouter();
   const { accountId } = router.query;
-  const { setAccountId } = useContext(AppContext);
+  const [realId, setRealId] = useState<number | null>(null);
 
   useEffect(() => {
     if (typeof accountId !== "string") {
@@ -15,10 +14,12 @@ function useAccountIdParser() {
     if (isNaN(parsed)) {
       return;
     }
-    setAccountId(parsed);
+    setRealId(parsed);
   }, [accountId]);
 
-  return;
+  return {
+    accountId: realId
+  }
 }
 
 export default useAccountIdParser;

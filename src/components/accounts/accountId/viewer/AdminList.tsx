@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import Skeleton from "~/components/Skeleton";
-import { AppContext } from "~/context/app";
+import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function AdminList() {
@@ -13,9 +13,8 @@ function AdminList() {
 }
 
 function List() {
-
-  const { account } = useContext(AppContext);
-  const { data: admins } = api.account.getAdmins.useQuery({ accountId: account?.id });
+  const { accountId } = useContext(AccountContext);
+  const { data: admins } = api.account.getAdmins.useQuery({ accountId });
 
   if (!admins) {
     return (

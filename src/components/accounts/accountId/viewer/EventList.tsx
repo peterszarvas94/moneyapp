@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import Skeleton from "~/components/Skeleton";
-import { AppContext } from "~/context/app";
+import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function EventList() {
@@ -13,10 +13,10 @@ function EventList() {
 }
 
 function List() {
-  const { account } = useContext(AppContext);
-  const { data: events } = api.account.getEvents.useQuery({ accountId: account?.id });
+  const { accountId } = useContext(AccountContext);
+  const { data: events } = api.account.getEvents.useQuery({ accountId });
 
-  if (!events || !account) {
+  if (!events) {
     return (
       <Skeleton />
     )

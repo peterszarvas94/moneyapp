@@ -1,27 +1,34 @@
-import { useRouter } from "next/router";
+import { TRPCClientError } from "@trpc/client";
+import { TRPCErrorShape } from "@trpc/server/rpc";
 import { useContext } from "react";
 import { toast } from "react-hot-toast";
 import { TiDelete } from "react-icons/ti";
+import Card from "~/components/Card";
+import CardLi from "~/components/CardLi";
+import CardNoItem from "~/components/CardNoItem";
+import CardTitle from "~/components/CardTitle";
 import Skeleton from "~/components/Skeleton";
-import { AppContext } from "~/context/app";
+import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function AdminList() {
   return (
-    <>
-      <div className="pt-6 italic">Admins of this account:</div>
+    <Card>
+      <CardTitle title="Admins" />
       <List />
-    </>
+    </Card>
   )
 }
 
 function List() {
-  const router = useRouter();
-  const { account, user: self } = useContext(AppContext);
-  const { data: admins, refetch: getAdmins } = api.account.getAdmins.useQuery({ accountId: account?.id });
+  const { accountId } = useContext(AccountContext);
+  const { data: admins, refetch: getAdmins } = api.account.getAdmins.useQuery({ accountId });
+  const { data: access } = api.account.getAccess.useQuery({ accountId });
+  const { data: account } = api.account.get.useQuery({ accountId });
+  const { data: self } = api.user.getSelf.useQuery();
   const { mutateAsync: deleteAdmin } = api.admin.delete.useMutation();
-
-  if (!admins) {
+    
+  if (!admins || !access || !self) {
     return (
       <Skeleton />
     )
@@ -29,15 +36,15 @@ function List() {
 
   if (admins.length === 0) {
     return (
-      <div>No admins</div>
+      <CardNoItem>No admins</CardNoItem>
     )
   }
 
   return (
-    <>
+    <ul>
       {
         admins.map((admin) => (
-          <li key={admin.id} className="flex items-center">
+          <CardLi key={admin.id}>
             <div>{`${admin.name} (${admin.email})`}</div>
             <button
               className="text-xl"
@@ -46,12 +53,13 @@ function List() {
                   return;
                 }
 
-                if (admins.length === 1) {
-                  toast.error('There always should be at least 1 admin for each account');
+                if (admin.id === self.id) {
+                  toast.error('You cannot delete yourself as admin');
                   return;
                 }
 
                 if (confirm(`Are you sure you want to delete ${admin.name} (${admin.email}) as admin of account ${account.name}?`)) {
+                  console.log(admin.id, account.id);
                   try {
                     await deleteAdmin({
                       userId: admin.id,
@@ -59,20 +67,19 @@ function List() {
                     })
                     toast.success('Admin deleted');
                     getAdmins();
-                  } catch (e) { }
-                }
-
-                if (self && self.id === admin.id) {
-                  router.push("/dashboard/accounts");
+                  } catch (e) {
+                    const err = e as TRPCClientError<TRPCErrorShape>;
+                    toast.error(err.message);
+                  }
                 }
               }}
             >
-              <TiDelete />
+              <TiDelete className="hover:text-red-400"/>
             </button>
-          </li>
+          </CardLi>
         ))
       }
-    </>
+    </ul>
   )
 }
 

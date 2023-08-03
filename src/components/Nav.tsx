@@ -1,15 +1,22 @@
-import Link from "next/link";
+import HomeNav from "./HomeNav";
+import PageNav from "./PageNav";
 
-function Nav() {
-  return (
-    <nav>
-      <ul className='flex flex-col underline'>
-	<Link href="/">Home</Link>
-	<Link href="/dashboard">Dashboard</Link>
-	<Link href="/dashboard/accounts">Accounts</Link>
-      </ul>
-    </nav>
-  );
+interface Props {
+	home?: boolean;
+}
+
+function Nav({ home }: Props) {
+	return (
+		<nav className="flex items-center">
+			<ul className="flex gap-4 items-center">
+				{home ? (
+					<HomeNav />
+				) : (
+					<PageNav />
+				)}
+			</ul>
+		</nav>
+	);
 }
 
 export default Nav;

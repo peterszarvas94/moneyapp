@@ -1,33 +1,47 @@
-import Link from "next/link";
-import { Account } from "~/server/db/schema";
+import { api } from "~/utils/api";
+import Skeleton from "../Skeleton";
+import CardTitle from "../CardTitle";
+import CardNoItem from "../CardNoItem";
+import CardLink from "../CardLink";
+import Card from "../Card";
 
-interface Props {
-  accounts: Account[];
-}
-function Viewer({ accounts }: Props) {
-  if (accounts.length === 0) {
-    return "No viewed accounts."
-  }
-
+function ViewerContent() {
   return (
-    <>
-      <div>
-        My viewed accounts:
-      </div>
-      <ul>
-        {accounts.map((account) => (
-          <li key={account.id}>
-            <Link
-              href={`/dashboard/accounts/${account.id}`}
-              className='underline'
-            >
-              {account.name}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </>
+    <Card>
+      <CardTitle title="Viewed" />
+      <List />
+    </Card>
   )
 }
 
-export default Viewer;
+function List() {
+  const { data: accounts } = api.viewer.getAccounts.useQuery();
+
+  if (!accounts) {
+    return (
+      <Skeleton />
+    )
+  }
+
+  if (accounts.length === 0) {
+    return (
+      <CardNoItem>No viewed accounts.</CardNoItem>
+    )
+  }
+
+  return (
+    <ul>
+      {accounts.map((account) => (
+        <li key={account.id}>
+          <CardLink
+            url={`/accounts/${account.id}`}
+          >
+            {account.name}
+          </CardLink>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export default ViewerContent;

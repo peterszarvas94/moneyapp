@@ -7,15 +7,17 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "gen": "drizzle-kit generate:sqlite --config drizzle.config.ts",
-    "push": "drizzle-kit push:sqlite --config drizzle.config.ts",
+    "gen": "drizzle-kit generate:mysql --config drizzle.config.ts",
+    "push": "drizzle-kit push:mysql --config drizzle.config.ts",
     "drop": "drizzle-kit drop --config drizzle.config.ts",
-    "studio": "drizzle-kit studio --config drizzle.config.ts --port 4000",
-    "proxy": "ngrok http 3000"
+    "proxy": "ngrok http 3000",
+    "db": "pscale connect moneyapp main",
+    "studio": "drizzle-kit studio --config drizzle.config.ts --port 4000"
   },
   "dependencies": {
     "@clerk/nextjs": "^4.21.13",
     "@libsql/client": "^0.2.2",
+    "@planetscale/database": "^1.10.0",
     "@t3-oss/env-nextjs": "^0.3.1",
     "@tanstack/react-query": "^4.29.19",
     "@trpc/client": "^10.33.1",

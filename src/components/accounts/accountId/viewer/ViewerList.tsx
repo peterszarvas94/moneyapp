@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import Skeleton from "~/components/Skeleton";
-import { AppContext } from "~/context/app";
+import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function ViewerList() {
@@ -13,8 +13,8 @@ function ViewerList() {
 }
 
 function List() {
-  const { account } = useContext(AppContext);
-  const { data: viewers } = api.account.getViewers.useQuery({ accountId: account?.id });
+  const { accountId } = useContext(AccountContext);
+  const { data: viewers } = api.account.getViewers.useQuery({ accountId });
 
   if (!viewers) {
     return (

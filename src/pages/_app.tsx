@@ -3,16 +3,13 @@ import { api } from "~/utils/api";
 import { Toaster } from 'react-hot-toast';
 import { ClerkProvider } from "@clerk/nextjs";
 import "~/styles/globals.css";
-import ContextProvider from "~/context/app";
 
 const MyApp: AppType = ({ Component, pageProps }) => {
 
   return (
     <ClerkProvider {...pageProps}>
-      <ContextProvider>
-        <Toaster />
-        <Component {...pageProps} />
-      </ContextProvider>
+      <Toaster />
+      <Component {...pageProps} />
     </ClerkProvider>
   );
 };

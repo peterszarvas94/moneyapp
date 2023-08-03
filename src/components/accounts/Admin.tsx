@@ -1,33 +1,47 @@
-import Link from "next/link";
-import { Account } from "~/server/db/schema";
+import { api } from "~/utils/api";
+import Skeleton from "../Skeleton";
+import CardTitle from "../CardTitle";
+import CardLink from "../CardLink";
+import CardNoItem from "../CardNoItem";
+import Card from "../Card";
 
-interface Props {
-  accounts: Account[];
-}
-function Admin({ accounts }: Props) {
-  if (accounts.length === 0) {
-    return "No administrated accounts."
-  }
-
+function AdminContent() {
   return (
-    <>
-      <div>
-        My administrated accounts:
-      </div>
-      <ul>
-        {accounts.map((account) => (
-          <li key={account.id}>
-            <Link
-              href={`/dashboard/accounts/${account.id}`}
-              className='underline'
-            >
-              {account.name}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </>
+    <Card>
+      <CardTitle title="Administrated" />
+      <List />
+    </Card>
   )
 }
 
-export default Admin;
+function List() {
+  const { data: accounts } = api.admin.getAccounts.useQuery();
+
+  if (!accounts) {
+    return (
+      <Skeleton />
+    )
+  }
+
+  if (accounts.length === 0) {
+    return (
+      <CardNoItem>No administrated accounts.</CardNoItem>
+    )
+  }
+
+  return (
+    <ul>
+      {accounts.map((account) => (
+        <li key={account.id}>
+          <CardLink
+            url={`/accounts/${account.id}`}
+          >
+            {account.name}
+          </CardLink>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export default AdminContent;
