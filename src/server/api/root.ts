@@ -4,20 +4,13 @@ import { accountRouter } from "./routers/account";
 import { adminRouter } from "./routers/admin";
 import { viewerRouter } from "./routers/viewer";
 import { eventRouter } from "./routers/event";
-import { paymentRouter } from "./routers/payment";
 
-/**
- * This is the primary router for your server.
- *
- * All routers added in /api/routers should be manually added here.
- */
 export const appRouter = createTRPCRouter({
   user: userRouter,
   account: accountRouter,
   admin: adminRouter,
   viewer: viewerRouter,
   event: eventRouter,
-  payment: paymentRouter,
 });
 
 // export type definition of API

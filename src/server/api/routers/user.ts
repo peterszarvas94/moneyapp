@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createTRPCRouter, loggedInProcedure, publicProcedure } from "~/server/api/trpc";
 import { users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
-import { getDateString } from "~/utils/date";
+import { nanoid } from "nanoid";
 
 export const userRouter = createTRPCRouter({
   new: publicProcedure
@@ -14,11 +14,12 @@ export const userRouter = createTRPCRouter({
       clerkId: z.string(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const id = nanoid();
+      const { name, email, clerkId } = input;
       const now = new Date();
 
-      const { name, email, clerkId } = input;
-
       const newUser: NewUser = {
+        id,
         name,
         email,
         clerkId,
@@ -37,6 +38,49 @@ export const userRouter = createTRPCRouter({
         })
       }
     }),
+
+  update: publicProcedure
+    .input(z.object({
+      clerkId: z.string(),
+      name: z.string(),
+      email: z.string().email(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      const { clerkId, name, email } = input;
+
+      try {
+        await ctx.db.update(users).set({
+          name,
+          email,
+          clerkId,
+          updatedAt: new Date(),
+        }).where(eq(users.clerkId, clerkId));
+        return true;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Account update failed",
+        })
+      }
+    }),
+
+  delete: publicProcedure
+    .input(z.object({
+      clerkId: z.string(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      const { clerkId } = input;
+      try {
+        await ctx.db.delete(users).where(eq(users.clerkId, clerkId));
+        return true;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Account deletion failed",
+        })
+      }
+    }),
+
 
   getByClerkId: loggedInProcedure
     .query(async ({ ctx }): Promise<User | null> => {
@@ -78,7 +122,7 @@ export const userRouter = createTRPCRouter({
 
   get: loggedInProcedure
     .input(z.object({
-      userId: z.number().optional()
+      userId: z.string().optional()
     }))
     .query(async ({ input, ctx }): Promise<User | null> => {
       const { userId } = input;
@@ -126,45 +170,4 @@ export const userRouter = createTRPCRouter({
       }
     }),
 
-  update: publicProcedure
-    .input(z.object({
-      clerkId: z.string(),
-      name: z.string(),
-      email: z.string().email(),
-    }))
-    .mutation(async ({ input, ctx }): Promise<true> => {
-      const { clerkId, name, email } = input;
-
-      try {
-        await ctx.db.update(users).set({
-          name,
-          email,
-          clerkId,
-          updatedAt: new Date(),
-        }).where(eq(users.clerkId, clerkId));
-        return true;
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Account update failed",
-        })
-      }
-    }),
-
-  delete: publicProcedure
-    .input(z.object({
-      clerkId: z.string(),
-    }))
-    .mutation(async ({ input, ctx }): Promise<true> => {
-      const { clerkId } = input;
-      try {
-        await ctx.db.delete(users).where(eq(users.clerkId, clerkId));
-        return true;
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Account deletion failed",
-        })
-      }
-    }),
 })

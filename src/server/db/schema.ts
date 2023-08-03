@@ -1,14 +1,9 @@
 import { InferModel, relations } from 'drizzle-orm';
-import { int, datetime, primaryKey, text, mysqlTable } from 'drizzle-orm/mysql-core';
-
-export const dummy = mysqlTable('dummy', {
-  id: int('id').primaryKey().autoincrement(),
-  name: text('name').notNull(),
-})
+import { int, datetime, primaryKey, text, mysqlTable, varchar } from 'drizzle-orm/mysql-core';
 
 // users
 export const users = mysqlTable('users', {
-  id: int('id').primaryKey().autoincrement(),
+  id: varchar('id', { length: 21 }).primaryKey().notNull(),
   name: text('name').notNull(),
   email: text('email').notNull(),
   clerkId: text('clerk_id').notNull(),
@@ -26,7 +21,7 @@ export const userRelations = relations(users, ({ many }) => ({
 
 // accounts
 export const accounts = mysqlTable('accounts', {
-  id: int('id').primaryKey().autoincrement(),
+  id: varchar('id', { length: 21 }).primaryKey().notNull(),
   name: text('name').notNull(),
   description: text('description'),
   currency: text('currency').notNull(),
@@ -41,13 +36,13 @@ export const accountRelations = relations(accounts, ({ many }) => ({
   accountAdmins: many(accountAdmins),
   accountViewers: many(accountViewers),
   events: many(events),
-/*   payments: many(payments), */
+  /*  payments: many(payments), */
 }))
 
 // account admins
 export const accountAdmins = mysqlTable('account_admins', {
-  adminId: int('admin_id').notNull(),
-  accountId: int('account_id').notNull(),
+  adminId: varchar('admin_id', { length: 21 }).notNull(),
+  accountId: varchar('account_id', { length: 21 }).notNull(),
   createdAt: datetime('created_at').notNull(),
 }, (t) => ({
   pk: primaryKey(t.adminId, t.accountId)
@@ -69,8 +64,8 @@ export const accountAdminsRelations = relations(accountAdmins, ({ one }) => ({
 
 // account viewers
 export const accountViewers = mysqlTable('account_viewers', {
-  viewerId: int('viewer_id').notNull(),
-  accountId: int('account_id').notNull(),
+  viewerId: varchar('viewer_id', { length: 21 }).notNull(),
+  accountId: varchar('account_id', { length: 21 }).notNull(),
   createdAt: datetime('created_at').notNull(),
 }, (t) => ({
   pk: primaryKey(t.viewerId, t.accountId)
@@ -92,12 +87,12 @@ export const accountViewersRelations = relations(accountViewers, ({ one }) => ({
 
 // event
 export const events = mysqlTable('events', {
-  id: int('id').primaryKey().autoincrement(),
+  id: varchar('id', { length: 21 }).primaryKey().notNull(),
   name: text('name').notNull(),
   description: text('description'),
   income: int('income').notNull(),
   saving: int('saving').notNull(),
-  accountId: int('account_id').notNull(),
+  accountId: varchar('account_id', { length: 21 }).notNull(),
   createdAt: datetime('created_at').notNull(),
   updatedAt: datetime('updated_at').notNull(),
 })
@@ -110,7 +105,7 @@ export const eventRelations = relations(events, ({ one, /*many*/ }) => ({
     fields: [events.accountId],
     references: [accounts.id],
   }),
-/*   payments: many(payments), */
+  /*   payments: many(payments), */
 }))
 
 // payment

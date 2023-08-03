@@ -4,17 +4,12 @@ import { useEffect, useState } from "react";
 function useEventIdParser() {
   const router = useRouter();
   const { eventId } = router.query;
-  const [realId, setRealId] = useState<number | null>(null);
+  const [realId, setRealId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof eventId !== "string") {
-      return;
+    if (typeof eventId === "string") {
+      setRealId(eventId);
     }
-    const parsed = parseInt(eventId);
-    if (isNaN(parsed)) {
-      return;
-    }
-    setRealId(parsed);
   }, [eventId]);
 
   return {

@@ -4,17 +4,12 @@ import { useEffect, useState } from "react";
 function useAccountIdParser() {
   const router = useRouter();
   const { accountId } = router.query;
-  const [realId, setRealId] = useState<number | null>(null);
+  const [realId, setRealId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof accountId !== "string") {
-      return;
+    if (typeof accountId === "string") {
+      setRealId(accountId);
     }
-    const parsed = parseInt(accountId);
-    if (isNaN(parsed)) {
-      return;
-    }
-    setRealId(parsed);
   }, [accountId]);
 
   return {

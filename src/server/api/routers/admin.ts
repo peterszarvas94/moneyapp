@@ -1,10 +1,9 @@
-import type { Account, AccountAdmin, NewAccountAdmin } from "~/server/db/schema";
+import type { Account, NewAccountAdmin } from "~/server/db/schema";
 import { z } from "zod";
-import { accessedProcedure, adminProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
 import { accountAdmins } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
-import { getDateString } from "~/utils/date";
 
 export const adminRouter = createTRPCRouter({
   getAccounts: loggedInProcedure
@@ -30,7 +29,7 @@ export const adminRouter = createTRPCRouter({
 
   delete: adminProcedure
     .input(z.object({
-      userId: z.number(),
+      userId: z.string(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
       const { user, accountId } = ctx;
@@ -47,7 +46,7 @@ export const adminRouter = createTRPCRouter({
         await ctx.db.delete(accountAdmins).where(and(
           eq(accountAdmins.accountId, accountId),
           eq(accountAdmins.adminId, adminId),
-        )).run();
+        ))
         return true;
       } catch (e) {
         throw new TRPCError({
@@ -57,25 +56,24 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  // old code
   new: loggedInProcedure
     .input(z.object({
-      userId: z.number(),
-      accountId: z.number(),
+      userId: z.string(),
+      accountId: z.string(),
     }))
-    .mutation(async ({ input, ctx }): Promise<AccountAdmin> => {
-      const now = new Date();
+    .mutation(async ({ input, ctx }): Promise<true> => {
       const { userId: adminId, accountId } = input;
+      const now = new Date();
 
       const newAccountAdmin: NewAccountAdmin = {
         adminId,
         accountId,
-        createdAt: getDateString(now),
+        createdAt: now,
       }
 
       try {
-        const accountAdmin = ctx.db.insert(accountAdmins).values(newAccountAdmin).returning().get();
-        return accountAdmin;
+        ctx.db.insert(accountAdmins).values(newAccountAdmin);
+        return true;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -83,10 +81,11 @@ export const adminRouter = createTRPCRouter({
         })
       }
     }),
+
   checkAccess: loggedInProcedure
     .input(z.object({
-      userId: z.number().optional(),
-      accountId: z.number().optional(),
+      userId: z.string().optional(),
+      accountId: z.string().optional(),
     }))
     .query(async ({ input, ctx }): Promise<boolean> => {
       const { userId: adminId, accountId } = input;
@@ -113,6 +112,5 @@ export const adminRouter = createTRPCRouter({
         })
       }
     }),
-
 
 });

@@ -84,7 +84,7 @@ export const loggedInProcedure = publicProcedure
 
 export const accessedProcedure = loggedInProcedure
   .input(z.object({
-    accountId: z.number()
+    accountId: z.string()
   }))
   .use(async ({ input, ctx, next }) => {
     const { user: { id: userId } } = ctx;

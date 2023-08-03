@@ -1,7 +1,7 @@
 import { createContext } from "react";
 
 type Context = {
-  eventId: number;
+  eventId: string;
 }
 
 const initialContext: Context = {} as Context;

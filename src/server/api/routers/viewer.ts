@@ -4,7 +4,6 @@ import { accessedProcedure, adminProcedure, createTRPCRouter, loggedInProcedure 
 import { accountViewers } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
-import { getDateString } from "~/utils/date";
 
 export const viewerRouter = createTRPCRouter({
     getAccounts: loggedInProcedure
@@ -30,21 +29,21 @@ export const viewerRouter = createTRPCRouter({
 
   new: adminProcedure
     .input(z.object({
-      userId: z.number(),
-      accountId: z.number(),
+      userId: z.string(),
+      accountId: z.string(),
     }))
-    .mutation(async ({ input, ctx }): Promise<AccountViewer> => {
+    .mutation(async ({ input, ctx }): Promise<true> => {
       const { userId: viewerId, accountId } = input;
 
       const newAccountViewer: NewAccountViewer = {
         viewerId,
         accountId,
-        createdAt: getDateString(new Date),
+        createdAt: new Date(),
       }
 
       try {
-        const accountViewer = await ctx.db.insert(accountViewers).values(newAccountViewer).returning().get();
-        return accountViewer;
+        await ctx.db.insert(accountViewers).values(newAccountViewer);
+        return true;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -55,7 +54,7 @@ export const viewerRouter = createTRPCRouter({
 
   delete: adminProcedure
     .input(z.object({
-      userId: z.number(),
+      userId: z.string(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
       const { user, accountId } = ctx;
@@ -73,7 +72,7 @@ export const viewerRouter = createTRPCRouter({
         await ctx.db.delete(accountViewers).where(and(
           eq(accountViewers.accountId, accountId),
           eq(accountViewers.viewerId, viewerId),
-        )).run();
+        ));
         return true;
       } catch (e) {
         throw new TRPCError({
@@ -83,13 +82,10 @@ export const viewerRouter = createTRPCRouter({
       }
     }),
 
-
-
-  // old code
-  checkAccess: loggedInProcedure
+checkAccess: loggedInProcedure
     .input(z.object({
-      userId: z.number().optional(),
-      accountId: z.number().optional(),
+      userId: z.string().optional(),
+      accountId: z.string().optional(),
     }))
     .query(async ({ input, ctx }): Promise<boolean> => {
       const { userId: viewerId, accountId } = input;
@@ -104,7 +100,7 @@ export const viewerRouter = createTRPCRouter({
             eq(accountViewers.accountId, accountId),
             eq(accountViewers.viewerId, viewerId),
           ),
-        });
+        })
         if (!query) {
           return false;
         }
@@ -112,7 +108,7 @@ export const viewerRouter = createTRPCRouter({
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Viewer access check failed",
+          message: "Admin access check failed",
         })
       }
     }),

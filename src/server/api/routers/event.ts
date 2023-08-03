@@ -1,15 +1,15 @@
-import type { Event, NewEvent, Payment } from "~/server/db/schema";
+import type { Event, NewEvent} from "~/server/db/schema";
 import { z } from "zod";
-import { accessedProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
+import { accessedProcedure, createTRPCRouter} from "~/server/api/trpc";
 import { events } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
-import { getDateString } from "~/utils/date";
+import { nanoid } from "nanoid";
 
 export const eventRouter = createTRPCRouter({
   get: accessedProcedure
     .input(z.object({
-      eventId: z.number()
+      eventId: z.string()
     }))
     .query(async ({ input, ctx }): Promise<Event> => {
       const { eventId } = input;
@@ -39,7 +39,7 @@ export const eventRouter = createTRPCRouter({
 
       return event;
     }),
-  
+
   new: accessedProcedure
     .input(z.object({
       name: z.string(),
@@ -47,26 +47,26 @@ export const eventRouter = createTRPCRouter({
       income: z.number(),
       saving: z.number(),
     }))
-    .mutation(async ({ input, ctx }): Promise<Event> => {
-      const { name, description, income, saving } = input;
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      const id = nanoid();
       const { accountId } = ctx;
-
+      const { name, description, income, saving } = input;
       const now = new Date();
-      const dateString = getDateString(now);
 
       const newEvent: NewEvent = {
+        id,
         name,
         description: description || null,
         income,
         saving,
         accountId,
-        createdAt: dateString,
-        updatedAt: dateString,
+        createdAt: now,
+        updatedAt: now,
       }
 
       try {
-        const event = await ctx.db.insert(events).values(newEvent).returning().get();
-        return event;
+        await ctx.db.insert(events).values(newEvent);
+        return true;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -74,33 +74,4 @@ export const eventRouter = createTRPCRouter({
         })
       }
     }),
-
-  // getPayments: loggedInProcedure
-  //   .input(z.object({
-  //     eventId: z.number().optional()
-  //   }))
-  //   .query(async ({ input, ctx }): Promise<Payment[] | null> => {
-  //     const { eventId } = input;
-  //
-  //     if (!eventId) {
-  //       return null;
-  //     }
-  //
-  //     try {
-  //       const payments = await ctx.db.query.payments.findMany({
-  //         where: eq(events.id, eventId),
-  //       });
-  //
-  //       if (!payments) {
-  //         return null;
-  //       }
-  //
-  //       return payments;
-  //     } catch (e) {
-  //       throw new TRPCError({
-  //         code: "INTERNAL_SERVER_ERROR",
-  //         message: "Payments retrieval failed",
-  //       })
-  //     }
-  //   }),
 });
