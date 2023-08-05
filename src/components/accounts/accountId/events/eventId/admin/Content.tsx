@@ -1,7 +1,6 @@
 import Spinner from "~/components/Spinner";
 import { EventContext } from "~/context/event";
 import useEventIdParser from "~/hooks/useEventIdParser";
-import EventDetails from "./EventDetails";
 import EditButton from "~/components/EditButton";
 import DeleteButton from "~/components/DeleteButton";
 import { toast } from "react-hot-toast";
@@ -9,6 +8,8 @@ import { useContext } from "react";
 import { api } from "~/utils/api";
 import { AccountContext } from "~/context/account";
 import { useRouter } from "next/router";
+import EventDetails from "../EventDetails";
+import PayemntList from "../PaymentList";
 
 function AdminContent() {
   const { eventId } = useEventIdParser();
@@ -58,6 +59,7 @@ function IdParsed() {
           text="Delete"
         />
       </div>
+      <PayemntList />
     </>
   )
 }

@@ -1,7 +1,7 @@
-import type { Event, NewEvent } from "~/server/db/schema";
+import type { Payment, Event, NewEvent } from "~/server/db/schema";
 import { z } from "zod";
 import { accessedProcedure, createTRPCRouter } from "~/server/api/trpc";
-import { events } from "~/server/db/schema";
+import { events, payments } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -144,6 +144,38 @@ export const eventRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Event deletion failed",
+        })
+      }
+    }),
+
+  getPayments: accessedProcedure
+    .input(z.object({
+      eventId: z.string()
+    }))
+    .query(async ({ input, ctx }): Promise<Payment[]> => {
+      const { eventId } = input;
+      const { accountId } = ctx;
+
+      try {
+        const myPayments = await ctx.db.query.payments.findMany({
+          where: and(
+            eq(payments.eventId, eventId),
+            eq(payments.accountId, accountId),
+          ),
+        });
+
+        if (!myPayments) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Payments not found",
+          })
+        }
+
+        return myPayments;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Payments retrieval failed",
         })
       }
     }),

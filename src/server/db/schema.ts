@@ -112,8 +112,8 @@ export const eventRelations = relations(events, ({ one, many }) => ({
 // payment
 export const payments = mysqlTable('payments', {
   id: int('id').primaryKey(),
-  eventId: int('event_id').notNull(),
-  accountId: int('account_id').notNull(),
+  eventId: varchar('event_id', { length: 21 }).notNull(),
+  accountId: varchar('account_id', { length: 21 }).notNull(),
   createdAt: datetime('created_at').notNull(),
   updatedAt: datetime('updated_at').notNull(),
 })
