@@ -1,7 +1,7 @@
 import type { Account, NewAccountAdmin } from "~/server/db/schema";
 import { z } from "zod";
 import { adminProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
-import { accountAdmins } from "~/server/db/schema";
+import { accountAdmins, users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 
@@ -82,6 +82,98 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
+  checkAccessByEmail: adminProcedure
+    .input(z.object({
+      email: z.string().email(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<boolean> => {
+      const { email } = input;
+      const { accountId } = ctx;
+
+      let userId: string;
+      try {
+        const user = await ctx.db.query.users.findFirst({
+          where: eq(users.email, email),
+        })
+        if (!user) {
+          return false;
+        }
+        userId = user.id;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "User search by email failed",
+        })
+      }
+
+      try {
+        const admin = await ctx.db.query.accountAdmins.findFirst({
+          where: and(
+            eq(accountAdmins.accountId, accountId),
+            eq(accountAdmins.adminId, userId),
+          ),
+        })
+        if (!admin) {
+          return false;
+        }
+        return true;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Admin access check failed",
+        })
+      }
+    }),
+
+  addByEmail: adminProcedure
+    .input(z.object({
+      email: z.string().email(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      const { email } = input;
+      const { accountId } = ctx;
+
+      let userId: string;
+      try {
+        const user = await ctx.db.query.users.findFirst({
+          where: eq(users.email, email),
+        })
+
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          })
+        }
+
+        userId = user.id;
+      } catch (e) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User search by email failed",
+        })
+      }
+
+      const now = new Date();
+
+      const newAccountAdmin: NewAccountAdmin = {
+        adminId: userId,
+        accountId,
+        createdAt: now,
+      }
+
+      try {
+        await ctx.db.insert(accountAdmins).values(newAccountAdmin);
+        return true;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Account admin creation failed",
+        })
+      }
+    }),
+
+  // old
   checkAccess: loggedInProcedure
     .input(z.object({
       userId: z.string().optional(),

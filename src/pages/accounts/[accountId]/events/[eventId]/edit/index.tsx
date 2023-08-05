@@ -15,13 +15,17 @@ import SubmitButton from "~/components/SubmitButton";
 import { AccountContext } from "~/context/account";
 import useAccountIdParser from "~/hooks/useAccountIdParser";
 import { api } from "~/utils/api";
+import { Event } from "~/server/db/schema";
+import useEventIdParser from "~/hooks/useEventIdParser";
+import { EventContext } from "~/context/event";
+import { parseDate } from "~/utils/date";
 
-const NewEventPage: NextPage = () => {
+const EditEventPage: NextPage = () => {
   return (
     <>
-      <HeadElement title="New Event - Moneyapp" description="Split the money" />
+      <HeadElement title="Edit Event - Moneyapp" description="Split the money" />
       <Header />
-      <PageTitle title="Create New Event" />
+      <PageTitle title="Edit Event" />
       <main>
         <Page />
       </main>
@@ -29,12 +33,13 @@ const NewEventPage: NextPage = () => {
   );
 }
 
-export default NewEventPage;
+export default EditEventPage;
 
 function Page() {
   const { accountId } = useAccountIdParser();
+  const { eventId } = useEventIdParser();
 
-  if (!accountId) {
+  if (!accountId || !eventId) {
     return (
       <Spinner />
     )
@@ -42,7 +47,9 @@ function Page() {
 
   return (
     <AccountContext.Provider value={{ accountId }}>
-      <IdParsed />
+      <EventContext.Provider value={{ eventId }}>
+        <IdParsed />
+      </EventContext.Provider>
     </AccountContext.Provider>
   )
 }
@@ -68,22 +75,51 @@ function IdParsed() {
   )
 }
 
-type NewEvent = {
+function AdminContent() {
+  const { accountId } = useContext(AccountContext);
+  const { eventId } = useContext(EventContext);
+  const { data: event, error } = api.event.get.useQuery({ accountId, eventId });
+
+  if (error) {
+    return (
+      <div>Event not found</div>
+    )
+  }
+
+  if (!event) {
+    return (
+      <Spinner />
+    )
+  }
+
+  return (
+    <EventFound event={event} />
+  )
+}
+
+
+type EditEvent = {
   name: string,
   description: string | null,
   income: string,
   saving: string,
-  delivery: string,
+  delivery: string
 }
-function AdminContent() {
+interface Props {
+  event: Event;
+}
+function EventFound({ event }: Props) {
   const { accountId } = useContext(AccountContext);
+  const { eventId } = useContext(EventContext);
   const { data: account } = api.account.get.useQuery({ accountId });
   const router = useRouter();
-  const { handleSubmit, control } = useForm<NewEvent>();
-  const { mutateAsync: addEvent } = api.event.new.useMutation();
+  const { handleSubmit, control } = useForm<EditEvent>();
+  const { mutateAsync: updateEvent } = api.event.update.useMutation();
 
-  const onSubmit: SubmitHandler<NewEvent> = async (data: NewEvent) => {
-    const { name, description, delivery, income, saving } = data;
+  const deliveryStr = parseDate(event.delivery);
+
+  const onSubmit: SubmitHandler<EditEvent> = async (data: EditEvent) => {
+    const { name, description, income, saving, delivery } = data;
 
     const parsedIncome = parseInt(income);
     if (isNaN(parsedIncome)) {
@@ -101,13 +137,14 @@ function AdminContent() {
     }
 
     const parsedDelivery = new Date(delivery);
-    if (parsedDelivery.toString() === "Invalid Date") {
+    if (parsedDelivery.toString() === "Invalid Date") { 
       toast.error("Invalid date");
       return;
     }
 
     try {
-      const eventId = await addEvent({
+      await updateEvent({
+        eventId,
         accountId,
         name,
         description,
@@ -136,7 +173,7 @@ function AdminContent() {
           control={control}
           name="name"
           rules={{ required: true }}
-          defaultValue=""
+          defaultValue={event.name}
           render={({ field }) => (
             <Input
               value={field.value}
@@ -152,7 +189,7 @@ function AdminContent() {
           control={control}
           name="description"
           rules={{ required: false }}
-          defaultValue=""
+          defaultValue={event.description}
           render={({ field }) => (
             <Input
               value={field.value ?? ""}
@@ -163,16 +200,15 @@ function AdminContent() {
           )}
         />
 
-
-        <Label htmlFor="delivery" text="Delivery date" />
+        <Label htmlFor="delivery" text="Delivery" />
         <Controller
           control={control}
           name="delivery"
           rules={{ required: true }}
-          defaultValue="2023-10-03"
+          defaultValue={deliveryStr}
           render={({ field }) => (
             <Input
-              value={field.value ?? ""}
+              value={field.value}
               setValue={field.onChange}
               type="date"
               required={true}
@@ -185,7 +221,7 @@ function AdminContent() {
           control={control}
           name="income"
           rules={{ required: true }}
-          defaultValue="0"
+          defaultValue={event.income.toString() ?? ""}
           render={({ field }) => (
             <InputNumber
               value={field.value ?? ""}
@@ -200,7 +236,7 @@ function AdminContent() {
           control={control}
           name="saving"
           rules={{ required: true }}
-          defaultValue="0"
+          defaultValue={event.saving.toString() ?? ""}
           render={({ field }) => (
             <InputNumber
               value={field.value ?? ""}
@@ -210,9 +246,10 @@ function AdminContent() {
           )}
         />
 
-        <SubmitButton text="Add event" />
+        <SubmitButton text="Save" />
       </form>
     </>
   )
 }
+
 

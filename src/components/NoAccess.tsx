@@ -1,10 +1,10 @@
-import Nav from "./Nav";
+import { FaBan } from "react-icons/fa"
 
 function NoAccess() {
   return (
-    <div>
-      <h1 className='text-3xl'>Access Denied</h1>
-      <Nav />
+    <div className="flex gap-2 items-center justify-center">
+      <FaBan className="text-red-500" />
+      <p className="w-fit">Access Denied</p>
     </div>
   );
 }

@@ -36,7 +36,7 @@ export const accountRelations = relations(accounts, ({ many }) => ({
   accountAdmins: many(accountAdmins),
   accountViewers: many(accountViewers),
   events: many(events),
-  /*  payments: many(payments), */
+  payments: many(payments),
 }))
 
 // account admins
@@ -92,6 +92,7 @@ export const events = mysqlTable('events', {
   description: text('description'),
   income: int('income').notNull(),
   saving: int('saving').notNull(),
+  delivery: datetime('delivery').notNull(),
   accountId: varchar('account_id', { length: 21 }).notNull(),
   createdAt: datetime('created_at').notNull(),
   updatedAt: datetime('updated_at').notNull(),
@@ -100,38 +101,33 @@ export const events = mysqlTable('events', {
 export type Event = InferModel<typeof events, 'select'>
 export type NewEvent = InferModel<typeof events, 'insert'>
 
-export const eventRelations = relations(events, ({ one, /*many*/ }) => ({
+export const eventRelations = relations(events, ({ one, many }) => ({
   account: one(accounts, {
     fields: [events.accountId],
     references: [accounts.id],
   }),
-  /*   payments: many(payments), */
+  payments: many(payments),
 }))
 
 // payment
-// export const payments = mysqlTable('payments', {
-//   id: int('id').primaryKey(),
-//   eventId: int('event_id').notNull().references(() => events.id),
-//   accountId: int('account_id').notNull().references(() => accounts.id),
-  // TODO:
-  // - rework app to use account ID from db instead of route
-  // - eg. you navigate /dashboard/payments/:id and it searches for accoutId, the verifies if you have access to it
-  // - also do this for events
-  // - this means, rework router folders yet again...
-//   createdAt: text('created_at').notNull(),
-//   updatedAt: text('updated_at').notNull(),
-// })
-//
-// export type Payment = InferModel<typeof payments, 'select'>
-// export type NewPayment = InferModel<typeof payments, 'insert'>
-//
-// export const paymentRelations = relations(payments, ({ one }) => ({
-//   event: one(events, {
-//     fields: [payments.eventId],
-//     references: [events.id],
-//   }),
-//   account: one(accounts, {
-//     fields: [payments.accountId],
-//     references: [accounts.id],
-//   }),
-// }))
+export const payments = mysqlTable('payments', {
+  id: int('id').primaryKey(),
+  eventId: int('event_id').notNull(),
+  accountId: int('account_id').notNull(),
+  createdAt: datetime('created_at').notNull(),
+  updatedAt: datetime('updated_at').notNull(),
+})
+
+export type Payment = InferModel<typeof payments, 'select'>
+export type NewPayment = InferModel<typeof payments, 'insert'>
+
+export const paymentRelations = relations(payments, ({ one }) => ({
+  event: one(events, {
+    fields: [payments.eventId],
+    references: [events.id],
+  }),
+  account: one(accounts, {
+    fields: [payments.accountId],
+    references: [accounts.id],
+  }),
+}))

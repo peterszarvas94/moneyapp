@@ -1,12 +1,12 @@
 import type { Account, AccountViewer, NewAccountViewer } from "~/server/db/schema";
 import { z } from "zod";
 import { accessedProcedure, adminProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
-import { accountViewers } from "~/server/db/schema";
+import { accountViewers, users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 
 export const viewerRouter = createTRPCRouter({
-    getAccounts: loggedInProcedure
+  getAccounts: loggedInProcedure
     .query(async ({ ctx }): Promise<Account[] | null> => {
       const { user: { id: viewerId } } = ctx;
 
@@ -82,7 +82,100 @@ export const viewerRouter = createTRPCRouter({
       }
     }),
 
-checkAccess: loggedInProcedure
+  checkAccessByEmail: adminProcedure
+    .input(z.object({
+      email: z.string().email(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<boolean> => {
+      const { email } = input;
+      const { accountId } = ctx;
+
+      let userId: string;
+      try {
+        const user = await ctx.db.query.users.findFirst({
+          where: eq(users.email, email),
+        })
+        if (!user) {
+          return false;
+        }
+        userId = user.id;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "User search by email failed",
+        })
+      }
+
+      try {
+        const admin = await ctx.db.query.accountViewers.findFirst({
+          where: and(
+            eq(accountViewers.accountId, accountId),
+            eq(accountViewers.viewerId, userId),
+          ),
+        })
+        if (!admin) {
+          return false;
+        }
+        return true;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Viewer access check failed",
+        })
+      }
+    }),
+
+   addByEmail: adminProcedure
+    .input(z.object({
+      email: z.string().email(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<true> => {
+      const { email } = input;
+      const { accountId } = ctx;
+
+      let userId: string;
+      try {
+        const user = await ctx.db.query.users.findFirst({
+          where: eq(users.email, email),
+        })
+
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          })
+        }
+
+        userId = user.id;
+      } catch (e) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User search by email failed",
+        })
+      }
+
+      const now = new Date();
+
+      const newAccountViewer: NewAccountViewer = {
+        viewerId: userId,
+        accountId,
+        createdAt: now,
+      }
+
+      try {
+        await ctx.db.insert(accountViewers).values(newAccountViewer);
+        return true;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Account viewer creation failed",
+        })
+      }
+    }),
+
+
+  // old
+  checkAccess: loggedInProcedure
     .input(z.object({
       userId: z.string().optional(),
       accountId: z.string().optional(),

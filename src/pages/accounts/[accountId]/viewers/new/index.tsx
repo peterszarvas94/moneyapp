@@ -1,12 +1,6 @@
 import type { NextPage } from "next";
-import Head from "next/head";
-import { SubmitHandler, useForm } from "react-hook-form";
-import Nav from "~/components/Nav";
-import useAccountCheckAccess  from "~/hooks/useAccountCheckAccess";
-import useSearchUser from "~/hooks/useSearchUser";
-import { User } from "~/server/db/schema";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import useAccountIdParser from "~/hooks/useAccountIdParser";
-import Skeleton from "~/components/Skeleton";
 import { api } from "~/utils/api";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/router";
@@ -14,16 +8,22 @@ import { useContext } from "react";
 import NoAccess from "~/components/NoAccess";
 import Spinner from "~/components/Spinner";
 import { AccountContext } from "~/context/account";
+import HeadElement from "~/components/Head";
+import Header from "~/components/Header";
+import PageTitle from "~/components/PageTitle";
+import { z } from "zod";
+import { TRPCClientError } from "@trpc/client";
+import Label from "~/components/Label";
+import SubmitButton from "~/components/SubmitButton";
+import { Input } from "~/components/Input";
 
 const NewViewerPage: NextPage = () => {
   useAccountIdParser();
   return (
     <>
-      <Head>
-        <title>LLAA</title>
-        <meta name="description" content="Language Learning AI app" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+      <HeadElement title="New Viewer - Moneyapp" description="Split the money" />
+      <Header />
+      <PageTitle title="Add New Viewer" />
       <main>
         <Page />
       </main>
@@ -31,8 +31,11 @@ const NewViewerPage: NextPage = () => {
   );
 }
 
+export default NewViewerPage;
+
 function Page() {
   const { accountId } = useAccountIdParser();
+
   if (!accountId) {
     return (
       <Spinner />
@@ -71,129 +74,89 @@ type Form = {
   email: string
 }
 function AdminContent() {
+  const router = useRouter();
   const { accountId } = useContext(AccountContext);
-  const { register, handleSubmit } = useForm<Form>();
-  const { search, user, loading } = useSearchUser();
   const { data: self } = api.user.getSelf.useQuery();
+  const { handleSubmit, control } = useForm<Form>();
+  const { mutateAsync: checkAdmin } = api.admin.checkAccessByEmail.useMutation();
+  const { mutateAsync: checkViewer } = api.viewer.checkAccessByEmail.useMutation();
+  const { mutateAsync: addViewer } = api.viewer.addByEmail.useMutation();
 
   const onSubmit: SubmitHandler<Form> = async ({ email }) => {
     if (self && self.email === email) {
-      toast.error("You can't add yourself as a viewer");
+      toast.error("You are already an admin, can not add yourself as a viewer");
       return;
     }
-    search(email);
+
+    try {
+      z.string().email().parse(email);
+    } catch (error) {
+      toast.error("Invalid email");
+      return;
+    }
+
+    try {
+      const isAdmin = await checkAdmin({ accountId, email });
+      if (isAdmin) {
+        toast.error("User is already an admin");
+        return;
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+    }
+
+    try {
+      const isViewer = await checkViewer({ accountId, email });
+      if (isViewer) {
+        toast.error("User is already a viewer");
+        return;
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+    }
+
+    try {
+      await addViewer({ accountId, email });
+      toast.success("Viewer added");
+      router.push(`/accounts/${accountId}`);
+    } catch (error) {
+      const trpcError = error as TRPCClientError<any>
+      if (trpcError.data?.code === "NOT_FOUND") {
+        toast.error("User not found");
+        return;
+      }
+
+      toast.error("Something went wrong");
+    }
   }
 
-  return (
-    <>
-      <h1 className='text-3xl'>Add viewer for account {accountId}</h1>
-      <Nav />
-
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4">
-        <label htmlFor='description'>Email</label>
-        <input
-          type='email'
-          id='description'
-          className='border-black border-2'
-          {...register('email', { required: true })}
-          required
-        />
-
-        <button
-          type='submit'
-          className='underline text-left'
-        >
-          Search
-        </button>
-      </form>
-
-      {loading ? (
-        <div className="pt-4">
-          <Skeleton />
-        </div>
-      ) : (
-        <SearchDone user={user} />
-      )}
-    </>
-  )
-}
-
-interface SearchDoneProps {
-  user: User | null | undefined;
-}
-function SearchDone({ user }: SearchDoneProps) {
-  if (user === undefined) {
-    return <div />
-  }
-
-  if (user === null) {
+  if (!accountId) {
     return (
-      <div className="pt-4">
-        User not found
-      </div>
+      <Spinner />
     )
   }
 
   return (
-    <UserFound user={user} />
-  )
-}
-
-interface UserFoundProps {
-  user: User;
-}
-function UserFound({ user }: UserFoundProps) {
-  const router = useRouter();
-  const { accountId } = useContext(AccountContext);
-  const { data: checkAdmin } = api.admin.checkAccess.useQuery({
-    userId: user.id,
-    accountId 
-  });
-  const { data: checkViewer } = api.viewer.checkAccess.useQuery({
-    userId: user.id,
-    accountId
-  });
-  const { mutateAsync: addViewer } = api.viewer.new.useMutation();
-
-  return (
     <>
-      <div className="pt-4">
-        {`User found: ${user.name} (${user.email})`}
-      </div>
-      <button
-        className="underline"
-        onClick={async () => {
-          if (checkAdmin === undefined || checkViewer === undefined) {
-            return;
-          }
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4 px-2">
+        <Label htmlFor="email" text="Email" />
+        <Controller
+          control={control}
+          name="email"
+          rules={{ required: true }}
+          defaultValue=""
+          render={({ field }) => (
+            <Input
+              value={field.value}
+              setValue={field.onChange}
+              type="email"
+              required={true}
+            />
+          )}
+        />
 
-          if (checkAdmin) {
-            toast.error("User is already admin");
-            return;
-          }
-
-          if (checkViewer) {
-            toast.error("User is already viewer");
-            return;
-          }
-
-          try {
-            await addViewer({
-              accountId: accountId,
-              userId: user.id
-            });
-
-            toast.success("Viewer added");
-            router.push(`/accounts/${accountId}`);
-          } catch (e) {
-            toast.error("Failed to add viewer");
-          }
-        }}
-      >
-        Add as viewer
-      </button>
+        <SubmitButton text="Add" />
+      </form>
     </>
   )
 }
-
-export default NewViewerPage;

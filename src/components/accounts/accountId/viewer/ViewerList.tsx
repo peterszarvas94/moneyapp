@@ -1,14 +1,18 @@
 import { useContext } from "react";
+import Card from "~/components/Card";
+import CardLi from "~/components/CardLi";
+import CardNoItem from "~/components/CardNoItem";
+import CardTitle from "~/components/CardTitle";
 import Skeleton from "~/components/Skeleton";
 import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function ViewerList() {
   return (
-    <>
-      <div className="pt-6 italic">Viewers of this account:</div>
+    <Card>
+      <CardTitle title="Viewers" />
       <List />
-    </>
+    </Card>
   )
 }
 
@@ -24,7 +28,7 @@ function List() {
 
   if (viewers.length === 0) {
     return (
-      <div>No viewers</div>
+      <CardNoItem>No viewers</CardNoItem>
     )
   }
 
@@ -32,9 +36,9 @@ function List() {
     <ul>
       {
         viewers.map((viewer) => (
-          <li key={viewer.id} className="flex items-center">
-            {`${viewer.name} (${viewer.email})`}
-          </li>
+          <CardLi key={viewer.id}>
+            <div>{`${viewer.name} (${viewer.email})`}</div>
+          </CardLi>
         ))
       }
     </ul>

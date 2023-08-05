@@ -1,0 +1,5 @@
+/accounts/2/events...
+/accounts/2/payments
+/accounts/2/payments/new?event=1
+/accounts/2/payments/4
+/accounts/2/payments/4/edit

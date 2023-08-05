@@ -1,5 +1,4 @@
 import type { NextPage } from "next";
-import Head from "next/head";
 import NoAccess from "~/components/NoAccess";
 import AdminContent from "~/components/accounts/accountId/admin/Content";
 import ViewerContent from "~/components/accounts/accountId/viewer/Content";
@@ -8,21 +7,20 @@ import Spinner from "~/components/Spinner";
 import useAccountIdParser from "~/hooks/useAccountIdParser";
 import { AccountContext } from "~/context/account";
 import { useContext } from "react";
+import HeadElement from "~/components/Head";
+import Header from "~/components/Header";
+import PageTitle from "~/components/PageTitle";
 
-const AccountPage: NextPage = () => {
-  return (
-    <>
-      <Head>
-        <title>LLAA</title>
-        <meta name="description" content="Language Learning AI app" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main>
-        <Page />
-      </main>
-    </>
-  );
-}
+const AccountPage: NextPage = () => (
+  <>
+    <HeadElement title="Account - Moneyapp" description="Split the money" />
+    <Header />
+    <PageTitle title="Administrate account" />
+    <main>
+      <Page />
+    </main>
+  </>
+)
 
 function Page() {
   const { accountId } = useAccountIdParser();

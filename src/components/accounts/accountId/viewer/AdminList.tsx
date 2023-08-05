@@ -1,14 +1,18 @@
 import { useContext } from "react";
+import Card from "~/components/Card";
+import CardLi from "~/components/CardLi";
+import CardNoItem from "~/components/CardNoItem";
+import CardTitle from "~/components/CardTitle";
 import Skeleton from "~/components/Skeleton";
 import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function AdminList() {
   return (
-    <>
-      <div className="pt-6 italic">Admins of this account:</div>
+    <Card>
+      <CardTitle title="Admins" />
       <List />
-    </>
+    </Card>
   )
 }
 
@@ -24,7 +28,7 @@ function List() {
 
   if (admins.length === 0) {
     return (
-      <div>No admins</div>
+      <CardNoItem>No admins</CardNoItem>
     )
   }
 
@@ -32,9 +36,9 @@ function List() {
     <ul>
       {
         admins.map((admin) => (
-          <li key={admin.id} className="flex items-center">
-            {`${admin.name} (${admin.email})`}
-          </li>
+          <CardLi key={admin.id}>
+            <div>{`${admin.name} (${admin.email})`}</div>
+          </CardLi>
         ))
       }
     </ul>

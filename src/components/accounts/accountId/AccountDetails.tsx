@@ -21,7 +21,7 @@ function AccountDetails() {
       <CardTitle title="Account Details" />
       <ul>
         <CardLi>Name: {account.name}</CardLi>
-        <CardLi>Description: {account.description}</CardLi>
+        <CardLi>Description: {account.description ?? "-"}</CardLi>
         <CardLi>Currency: {account.currency}</CardLi>
       </ul>
     </Card>

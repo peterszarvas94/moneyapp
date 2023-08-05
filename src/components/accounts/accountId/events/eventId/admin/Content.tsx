@@ -1,12 +1,14 @@
-import { useContext } from "react";
-import Nav from "~/components/Nav";
-import NoAccess from "~/components/NoAccess";
 import Spinner from "~/components/Spinner";
-import { AccountContext } from "~/context/account";
 import { EventContext } from "~/context/event";
 import useEventIdParser from "~/hooks/useEventIdParser";
-import { api } from "~/utils/api";
 import EventDetails from "./EventDetails";
+import EditButton from "~/components/EditButton";
+import DeleteButton from "~/components/DeleteButton";
+import { toast } from "react-hot-toast";
+import { useContext } from "react";
+import { api } from "~/utils/api";
+import { AccountContext } from "~/context/account";
+import { useRouter } from "next/router";
 
 function AdminContent() {
   const { eventId } = useEventIdParser();
@@ -25,27 +27,37 @@ function AdminContent() {
 }
 
 function IdParsed() {
-  const { accountId } = useContext(AccountContext);
+  const router = useRouter();
   const { eventId } = useContext(EventContext);
-  const { data: event, error } = api.event.get.useQuery({ eventId, accountId });
-
-  if (error?.data?.code === "UNAUTHORIZED") {
-    return (
-      <NoAccess />
-    )
-  }
-
-  if (!event) {
-    return (
-      <Spinner />
-    )
-  }
+  const { accountId } = useContext(AccountContext);
+  const { mutateAsync: deleteEvent } = api.event.delete.useMutation();
 
   return (
     <>
-      <h2 className='text-3xl'>Event page for {event.id}</h2>
-      <Nav />
       <EventDetails />
+      <div className="px-4 flex justify-center gap-2">
+        <EditButton
+          url={`/accounts/${accountId}/events/${eventId}/edit`}
+          text="Edit"
+        />
+        <DeleteButton
+          click={async () => {
+            if (confirm("Are you sure?")) {
+              try {
+                await deleteEvent({
+                  accountId,
+                  eventId,
+                })
+                toast.success("Account deleted");
+                router.push(`/accounts/${accountId}`);
+              } catch (e) {
+                console.log(e)
+              }
+            }
+          }}
+          text="Delete"
+        />
+      </div>
     </>
   )
 }

@@ -1,6 +1,6 @@
-import type { Account, NewAccount } from "~/server/db/schema";
+import type { NewAccount } from "~/server/db/schema";
 import type { NextPage } from "next";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { api } from "~/utils/api";
 import { useRouter } from "next/router";
@@ -27,12 +27,11 @@ const NewAccountPage: NextPage = () => {
 function Page() {
   const { mutateAsync: createAccount } = api.account.new.useMutation();
   const router = useRouter();
-  const { register, handleSubmit } = useForm<NewAccount>();
+  const { handleSubmit, control } = useForm<NewAccount>();
 
   const onSubmit: SubmitHandler<NewAccount> = async (data: NewAccount) => {
-    let created: Account;
     try {
-      created = await createAccount(data);
+      await createAccount(data);
     } catch (e) {
       toast.error("Account creation failed");
       return;
@@ -44,15 +43,54 @@ function Page() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
-      <Label htmlFor='name' text="Name"/>
-      <Input register={register} name="name" required={true} type="text"/>
+      <Label htmlFor='name' text="Name" />
+      <Controller
+          control={control}
+          name="name"
+          rules={{ required: true }}
+          defaultValue=""
+          render={({ field }) => (
+            <Input
+              value={field.value}
+              setValue={field.onChange}
+              type="text"
+              required={true}
+            />
+          )}
+        />
 
-      <Label htmlFor='description' text="Description"/>
-      <Input register={register} name="description" required={true} type="text"/>
 
+      <Label htmlFor='description' text="Description" />
+       <Controller
+          control={control}
+          name="description"
+          rules={{ required: false }}
+          defaultValue=""
+          render={({ field }) => (
+            <Input
+              value={field.value ?? ""}
+              setValue={field.onChange}
+              type="text"
+              required={false}
+            />
+          )}
+        />
 
-      <Label htmlFor='currency' text="Currency"/>
-      <Input register={register} name="currency" required={true} type="text"/>
+      <Label htmlFor='currency' text="Currency" />
+      <Controller
+          control={control}
+          name="currency"
+          rules={{ required: true }}
+          defaultValue=""
+          render={({ field }) => (
+            <Input
+              value={field.value}
+              setValue={field.onChange}
+              type="text"
+              required={true}
+            />
+          )}
+        />
 
       <SubmitButton text="Create Account" />
     </form>

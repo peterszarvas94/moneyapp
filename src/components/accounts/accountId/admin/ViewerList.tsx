@@ -1,4 +1,3 @@
-import { useRouter } from "next/router";
 import { useContext } from "react";
 import { toast } from "react-hot-toast";
 import { TiDelete } from "react-icons/ti";

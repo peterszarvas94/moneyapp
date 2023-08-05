@@ -1,14 +1,18 @@
 import { useContext } from "react";
+import Card from "~/components/Card";
+import CardLink from "~/components/CardLink";
+import CardNoItem from "~/components/CardNoItem";
+import CardTitle from "~/components/CardTitle";
 import Skeleton from "~/components/Skeleton";
 import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function EventList() {
   return (
-    <>
-      <div className="pt-6 italic">Events of this account:</div>
+    <Card>
+      <CardTitle title="Events" />
       <List />
-    </>
+    </Card>
   )
 }
 
@@ -24,9 +28,7 @@ function List() {
 
   if (events.length === 0) {
     return (
-      <div>
-        No events
-      </div>
+      <CardNoItem>No events</CardNoItem>
     )
   }
 
@@ -35,7 +37,9 @@ function List() {
       {
         events.map((event) => (
           <li key={event.id} className="flex items-center">
-            <div>{event.name}</div>
+            <CardLink url={`/accounts/${accountId}/events/${event.id}`}>
+              {event.name}
+            </CardLink>
           </li>
         ))
       }

@@ -1,27 +1,25 @@
 import type { NextPage } from "next";
-import Head from "next/head";
 import { useContext } from "react";
+import HeadElement from "~/components/Head";
+import Header from "~/components/Header";
 import NoAccess from "~/components/NoAccess";
+import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import AdminContent from "~/components/accounts/accountId/events/eventId/admin/Content";
 import { AccountContext } from "~/context/account";
 import useAccountIdParser from "~/hooks/useAccountIdParser";
 import { api } from "~/utils/api";
 
-const EventPage: NextPage = () => {
-  return (
-    <>
-      <Head>
-        <title>LLAA</title>
-        <meta name="description" content="Language Learning AI app" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main>
-        <Page />
-      </main>
-    </>
-  );
-}
+const EventPage: NextPage = () => (
+  <>
+    <HeadElement title="Event - Moneyapp" description="Split the money" />
+    <Header />
+    <PageTitle title="Admnistrate Event" />
+    <main>
+      <Page />
+    </main>
+  </>
+)
 
 export default EventPage;
 

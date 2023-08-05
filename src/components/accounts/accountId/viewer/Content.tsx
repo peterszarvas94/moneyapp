@@ -1,24 +1,12 @@
-import Nav from "~/components/Nav";
-import Spinner from "~/components/Spinner";
 import AdminList from "./AdminList";
 import ViewerList from "./ViewerList";
 import EventList from "./EventList";
-import { useContext } from "react";
-import { AccountContext } from "~/context/account";
+import AccountDetails from "../AccountDetails";
 
 function ViewerContent() {
-  const { accountId } = useContext(AccountContext);
-
-  if (!accountId) {
-    return (
-      <Spinner />
-    )
-  }
-
   return (
     <>
-      <h1 className='text-3xl'>You are viewer of Account {accountId}</h1>
-      <Nav />
+      <AccountDetails />
       <AdminList />
       <ViewerList />
       <EventList />
