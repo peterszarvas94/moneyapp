@@ -1,6 +1,6 @@
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import HeadElement from "~/components/Head";
@@ -13,19 +13,17 @@ import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
 import { AccountContext } from "~/context/account";
-import useAccountIdParser from "~/hooks/useAccountIdParser";
 import { api } from "~/utils/api";
-import { Event } from "~/server/db/schema";
 import useEventIdParser from "~/hooks/useEventIdParser";
 import { EventContext } from "~/context/event";
 import { parseDate } from "~/utils/date";
+import usePageLoader from "~/hooks/usePageLoader";
 
 const EditEventPage: NextPage = () => {
   return (
     <>
       <HeadElement title="Edit Event - Moneyapp" description="Split the money" />
       <Header />
-      <PageTitle title="Edit Event" />
       <main>
         <Page />
       </main>
@@ -36,67 +34,31 @@ const EditEventPage: NextPage = () => {
 export default EditEventPage;
 
 function Page() {
-  const { accountId } = useAccountIdParser();
+  const { accountId, access } = usePageLoader();
   const { eventId } = useEventIdParser();
 
-  if (!accountId || !eventId) {
+  if (!accountId || !eventId || !access) {
     return (
-      <Spinner />
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
     )
   }
 
-  return (
-    <AccountContext.Provider value={{ accountId }}>
-      <EventContext.Provider value={{ eventId }}>
-        <IdParsed />
-      </EventContext.Provider>
-    </AccountContext.Provider>
-  )
-}
-
-function IdParsed() {
-  const { accountId } = useContext(AccountContext);
-  const { data: access, error } = api.account.getAccess.useQuery({ accountId });
-
-  if (error?.data?.code === "UNAUTHORIZED") {
+  if (access === "denied" || access === "viewer") {
     return (
       <NoAccess />
     )
   }
 
-  if (access === "admin") {
-    return (
-      <AdminContent />
-    )
-  }
-
   return (
-    <Spinner />
+    <AccountContext.Provider value={{ accountId, access }}>
+      <EventContext.Provider value={{ eventId }}>
+        <AdminContent />
+      </EventContext.Provider>
+    </AccountContext.Provider>
   )
 }
-
-function AdminContent() {
-  const { accountId } = useContext(AccountContext);
-  const { eventId } = useContext(EventContext);
-  const { data: event, error } = api.event.get.useQuery({ accountId, eventId });
-
-  if (error) {
-    return (
-      <div>Event not found</div>
-    )
-  }
-
-  if (!event) {
-    return (
-      <Spinner />
-    )
-  }
-
-  return (
-    <EventFound event={event} />
-  )
-}
-
 
 type EditEvent = {
   name: string,
@@ -105,40 +67,55 @@ type EditEvent = {
   saving: string,
   delivery: string
 }
-interface Props {
-  event: Event;
-}
-function EventFound({ event }: Props) {
+
+function AdminContent() {
   const { accountId } = useContext(AccountContext);
   const { eventId } = useContext(EventContext);
+  const { data: event } = api.event.get.useQuery({ accountId, eventId });
   const { data: account } = api.account.get.useQuery({ accountId });
   const router = useRouter();
   const { handleSubmit, control } = useForm<EditEvent>();
   const { mutateAsync: updateEvent } = api.event.update.useMutation();
+  const [saving, setSaving] = useState<boolean>(false);
+
+  if (!event || !account) {
+    return (
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
+    )
+  }
 
   const deliveryStr = parseDate(event.delivery);
 
   const onSubmit: SubmitHandler<EditEvent> = async (data: EditEvent) => {
+    setSaving(true);
     const { name, description, income, saving, delivery } = data;
 
     const parsedIncome = parseInt(income);
     if (isNaN(parsedIncome)) {
+      toast.error("Invalid income");
+      setSaving(false);
       return;
     }
 
     const parsedSaving = parseInt(saving);
     if (isNaN(parsedSaving)) {
+      toast.error("Invalid saving");
+      setSaving(false);
       return;
     }
 
     if (parsedSaving > parsedIncome) {
       toast.error("Saving can't be greater than income");
+      setSaving(false);
       return;
     }
 
     const parsedDelivery = new Date(delivery);
-    if (parsedDelivery.toString() === "Invalid Date") { 
+    if (parsedDelivery.toString() === "Invalid Date") {
       toast.error("Invalid date");
+      setSaving(false);
       return;
     }
 
@@ -156,17 +133,13 @@ function EventFound({ event }: Props) {
       router.push(`/accounts/${accountId}/events/${eventId}`);
     } catch (e) {
       toast.error("Failed to add event");
+      setSaving(false);
     }
-  }
-
-  if (!account) {
-    return (
-      <Spinner />
-    )
   }
 
   return (
     <>
+      <PageTitle title="Edit Event" />
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
         <Label htmlFor="name" text="Name" />
         <Controller
@@ -246,7 +219,13 @@ function EventFound({ event }: Props) {
           )}
         />
 
-        <SubmitButton text="Save" />
+        {saving ? (
+          <div className="flex justify-center py-4">
+            <Spinner />
+          </div>
+        ) : (
+          <SubmitButton text="Save" />
+        )}
       </form>
     </>
   )

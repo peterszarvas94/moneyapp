@@ -1,9 +1,9 @@
 import { api } from "~/utils/api";
-import Skeleton from "../Skeleton";
+import Card from "../Card";
 import CardTitle from "../CardTitle";
 import CardLink from "../CardLink";
 import CardNoItem from "../CardNoItem";
-import Card from "../Card";
+import CardLoading from "../CardLoading";
 
 function AdminContent() {
   return (
@@ -19,7 +19,7 @@ function List() {
 
   if (!accounts) {
     return (
-      <Skeleton />
+      <CardLoading />
     )
   }
 
@@ -32,13 +32,11 @@ function List() {
   return (
     <ul>
       {accounts.map((account) => (
-        <li key={account.id}>
-          <CardLink
-            url={`/accounts/${account.id}`}
-          >
-            {account.name}
-          </CardLink>
-        </li>
+        <CardLink
+          key={account.id}
+          url={`/accounts/${account.id}`}
+          text={account.name}
+        />
       ))}
     </ul>
   )

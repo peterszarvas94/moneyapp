@@ -11,6 +11,7 @@ const Dashboard: NextPage = () => {
         <div>
           <Header />
           <PageTitle title="Dashboard" />
+          <p className='text-center'>There will be a summary</p>
         </div>
       </main>
     </>

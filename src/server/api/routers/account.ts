@@ -129,6 +129,13 @@ export const accountRouter = createTRPCRouter({
       }
     }),
 
+  checkAccess: accessedProcedure
+    .mutation(async ({ ctx }): Promise<Access> => {
+      const { access } = ctx;
+      return access;
+    }),
+
+  // remove
   getAccess: accessedProcedure
     .query(async ({ ctx }): Promise<Access | null> => {
       const { access } = ctx;

@@ -7,7 +7,7 @@ interface Props {
 function CardLi({ children }: Props) {
 	return (
 		<li
-			className="w-full flex items-center p-2 hover:bg-gray-600 hover:text-white justify-between"
+			className="w-full flex items-center p-2 justify-between"
 		>
 			{children}
 		</li>

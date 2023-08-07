@@ -10,6 +10,8 @@ import Label from "~/components/Label";
 import { Input } from "~/components/Input";
 import SubmitButton from "~/components/SubmitButton";
 import Header from "~/components/Header";
+import { useState } from "react";
+import Spinner from "~/components/Spinner";
 
 const NewAccountPage: NextPage = () => {
   return (
@@ -28,71 +30,80 @@ function Page() {
   const { mutateAsync: createAccount } = api.account.new.useMutation();
   const router = useRouter();
   const { handleSubmit, control } = useForm<NewAccount>();
+  const [saving, setSaving] = useState<boolean>(false);
 
   const onSubmit: SubmitHandler<NewAccount> = async (data: NewAccount) => {
+    setSaving(true);
+
     try {
       await createAccount(data);
+      toast.success("Account created");
+      router.push("/accounts");
     } catch (e) {
       toast.error("Account creation failed");
+      setSaving(false);
       return;
     }
-
-    toast.success("Account created");
-    router.push("/accounts");
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
       <Label htmlFor='name' text="Name" />
       <Controller
-          control={control}
-          name="name"
-          rules={{ required: true }}
-          defaultValue=""
-          render={({ field }) => (
-            <Input
-              value={field.value}
-              setValue={field.onChange}
-              type="text"
-              required={true}
-            />
-          )}
-        />
+        control={control}
+        name="name"
+        rules={{ required: true }}
+        defaultValue=""
+        render={({ field }) => (
+          <Input
+            value={field.value}
+            setValue={field.onChange}
+            type="text"
+            required={true}
+          />
+        )}
+      />
 
 
       <Label htmlFor='description' text="Description" />
-       <Controller
-          control={control}
-          name="description"
-          rules={{ required: false }}
-          defaultValue=""
-          render={({ field }) => (
-            <Input
-              value={field.value ?? ""}
-              setValue={field.onChange}
-              type="text"
-              required={false}
-            />
-          )}
-        />
+      <Controller
+        control={control}
+        name="description"
+        rules={{ required: false }}
+        defaultValue=""
+        render={({ field }) => (
+          <Input
+            value={field.value ?? ""}
+            setValue={field.onChange}
+            type="text"
+            required={false}
+          />
+        )}
+      />
 
       <Label htmlFor='currency' text="Currency" />
       <Controller
-          control={control}
-          name="currency"
-          rules={{ required: true }}
-          defaultValue=""
-          render={({ field }) => (
-            <Input
-              value={field.value}
-              setValue={field.onChange}
-              type="text"
-              required={true}
-            />
-          )}
-        />
+        control={control}
+        name="currency"
+        rules={{ required: true }}
+        defaultValue=""
+        render={({ field }) => (
+          <Input
+            value={field.value}
+            setValue={field.onChange}
+            type="text"
+            required={true}
+          />
+        )}
+      />
 
-      <SubmitButton text="Create Account" />
+      {saving ? (
+        <div className="flex justify-center items-center py-6">
+          <Spinner />
+        </div>
+      ) : (
+        <SubmitButton text="Create Account" />
+      )}
     </form>
   )
 }

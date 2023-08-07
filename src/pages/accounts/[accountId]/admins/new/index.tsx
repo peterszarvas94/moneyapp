@@ -4,7 +4,7 @@ import useAccountIdParser from "~/hooks/useAccountIdParser";
 import { api } from "~/utils/api";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/router";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import NoAccess from "~/components/NoAccess";
 import Spinner from "~/components/Spinner";
 import { AccountContext } from "~/context/account";
@@ -16,13 +16,13 @@ import { Input } from "~/components/Input";
 import SubmitButton from "~/components/SubmitButton";
 import { z } from "zod";
 import { TRPCClientError } from "@trpc/client";
+import usePageLoader from "~/hooks/usePageLoader";
 
 const NewAdminPage: NextPage = () => {
   return (
     <>
       <HeadElement title="New Admin - Moneyapp" description="Split the money" />
       <Header />
-      <PageTitle title="Add New Admin" />
       <main>
         <Page />
       </main>
@@ -33,39 +33,26 @@ const NewAdminPage: NextPage = () => {
 export default NewAdminPage;
 
 function Page() {
-  const { accountId } = useAccountIdParser();
+  const { accountId, access } = usePageLoader();
 
-  if (!accountId) {
+  if (!accountId || !access) {
     return (
-      <Spinner />
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
     )
   }
 
-  return (
-    <AccountContext.Provider value={{ accountId }}>
-      <IdParsed />
-    </AccountContext.Provider>
-  )
-}
-
-function IdParsed() {
-  const { accountId } = useContext(AccountContext);
-  const { data: access, error } = api.account.getAccess.useQuery({ accountId });
-
-  if (error?.data?.code === "UNAUTHORIZED") {
+  if (access === "denied" || access === "viewer") {
     return (
       <NoAccess />
     )
   }
 
-  if (access === "admin") {
-    return (
-      <AdminContent />
-    )
-  }
-
   return (
-    <Spinner />
+    <AccountContext.Provider value={{ accountId, access }}>
+      <AdminContent />
+    </AccountContext.Provider>
   )
 }
 
@@ -80,10 +67,13 @@ function AdminContent() {
   const { mutateAsync: checkAdmin } = api.admin.checkAccessByEmail.useMutation();
   const { mutateAsync: checkViewer } = api.viewer.checkAccessByEmail.useMutation();
   const { mutateAsync: addAdmin } = api.admin.addByEmail.useMutation();
+  const [saving, setSaving] = useState<boolean>(false);
 
   const onSubmit: SubmitHandler<Form> = async ({ email }) => {
+    setSaving(true);
     if (self && self.email === email) {
       toast.error("You are already an admin");
+      setSaving(false);
       return;
     }
 
@@ -91,6 +81,7 @@ function AdminContent() {
       z.string().email().parse(email);
     } catch (error) {
       toast.error("Invalid email");
+      setSaving(false);
       return;
     }
 
@@ -98,45 +89,48 @@ function AdminContent() {
       const isAdmin = await checkAdmin({ accountId, email });
       if (isAdmin) {
         toast.error("User is already an admin");
+        setSaving(false);
         return;
       }
     } catch (error) {
       toast.error("Something went wrong");
+      setSaving(false);
+      return;
     }
 
     try {
       const isViewer = await checkViewer({ accountId, email });
       if (isViewer) {
         toast.error("User is already a viewer");
+        setSaving(false);
         return;
       }
     } catch (error) {
       toast.error("Something went wrong");
+      setSaving(false);
+      return;
     }
 
     try {
       await addAdmin({ accountId, email });
       toast.success("Admin added");
-      router.push(`/account/${accountId}`);
+      router.push(`/accounts/${accountId}`);
     } catch (error) {
       const trpcError = error as TRPCClientError<any>
       if (trpcError.data?.code === "NOT_FOUND") {
         toast.error("User not found");
+        setSaving(false);
         return;
       }
 
       toast.error("Something went wrong");
+      setSaving(false);
     }
-  }
-
-  if (!accountId) {
-    return (
-      <Spinner />
-    )
   }
 
   return (
     <>
+      <PageTitle title="Add New Admin" />
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4 px-2">
         <Label htmlFor="email" text="Email" />
         <Controller
@@ -154,7 +148,13 @@ function AdminContent() {
           )}
         />
 
-        <SubmitButton text="Add" />
+        {saving ? (
+          <div className="flex justify-center py-6">
+            <Spinner />
+          </div>
+        ) : (
+          <SubmitButton text="Add" />
+        )}
       </form>
     </>
   )

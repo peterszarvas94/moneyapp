@@ -1,6 +1,6 @@
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import HeadElement from "~/components/Head";
@@ -14,6 +14,7 @@ import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
 import { AccountContext } from "~/context/account";
 import useAccountIdParser from "~/hooks/useAccountIdParser";
+import usePageLoader from "~/hooks/usePageLoader";
 import { api } from "~/utils/api";
 
 const NewEventPage: NextPage = () => {
@@ -21,7 +22,6 @@ const NewEventPage: NextPage = () => {
     <>
       <HeadElement title="New Event - Moneyapp" description="Split the money" />
       <Header />
-      <PageTitle title="Create New Event" />
       <main>
         <Page />
       </main>
@@ -32,39 +32,26 @@ const NewEventPage: NextPage = () => {
 export default NewEventPage;
 
 function Page() {
-  const { accountId } = useAccountIdParser();
+  const { accountId, access } = usePageLoader();
 
-  if (!accountId) {
+  if (!accountId || !access) {
     return (
-      <Spinner />
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
     )
   }
 
-  return (
-    <AccountContext.Provider value={{ accountId }}>
-      <IdParsed />
-    </AccountContext.Provider>
-  )
-}
-
-function IdParsed() {
-  const { accountId } = useContext(AccountContext);
-  const { data: access, error } = api.account.getAccess.useQuery({ accountId });
-
-  if (error?.data?.code === "UNAUTHORIZED") {
+  if (access === "denied" || access === "viewer") {
     return (
       <NoAccess />
     )
   }
 
-  if (access === "admin") {
-    return (
-      <AdminContent />
-    )
-  }
-
   return (
-    <Spinner />
+    <AccountContext.Provider value={{ accountId, access }}>
+      <AdminContent />
+    </AccountContext.Provider>
   )
 }
 
@@ -81,28 +68,45 @@ function AdminContent() {
   const router = useRouter();
   const { handleSubmit, control } = useForm<NewEvent>();
   const { mutateAsync: addEvent } = api.event.new.useMutation();
+  const [saving, setSaving] = useState<boolean>(false);
+
+  if (!account) {
+    return (
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
+    )
+  }
 
   const onSubmit: SubmitHandler<NewEvent> = async (data: NewEvent) => {
+    setSaving(true);
+
     const { name, description, delivery, income, saving } = data;
 
     const parsedIncome = parseInt(income);
     if (isNaN(parsedIncome)) {
+      toast.error("Invalid income");
+      setSaving(false);
       return;
     }
 
     const parsedSaving = parseInt(saving);
     if (isNaN(parsedSaving)) {
+      toast.error("Invalid saving");
+      setSaving(false);
       return;
     }
 
     if (parsedSaving > parsedIncome) {
       toast.error("Saving can't be greater than income");
+      setSaving(false);
       return;
     }
 
     const parsedDelivery = new Date(delivery);
     if (parsedDelivery.toString() === "Invalid Date") {
       toast.error("Invalid date");
+      setSaving(false);
       return;
     }
 
@@ -119,17 +123,13 @@ function AdminContent() {
       router.push(`/accounts/${accountId}/events/${eventId}`);
     } catch (e) {
       toast.error("Failed to add event");
+      setSaving(false);
     }
-  }
-
-  if (!account) {
-    return (
-      <Spinner />
-    )
   }
 
   return (
     <>
+      <PageTitle title="Create New Event" />
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
         <Label htmlFor="name" text="Name" />
         <Controller
@@ -210,7 +210,13 @@ function AdminContent() {
           )}
         />
 
-        <SubmitButton text="Add event" />
+        {saving ? (
+          <div className="flex justify-center py-6">
+            <Spinner />
+          </div>
+        ) : (
+          <SubmitButton text="Add event" />
+        )}
       </form>
     </>
   )

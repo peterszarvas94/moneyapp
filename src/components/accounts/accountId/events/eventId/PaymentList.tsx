@@ -2,9 +2,10 @@ import Link from "next/link";
 import { useContext } from "react";
 import Card from "~/components/Card";
 import CardLi from "~/components/CardLi";
+import CardLink from "~/components/CardLink";
+import CardLoading from "~/components/CardLoading";
 import CardNoItem from "~/components/CardNoItem";
 import CardTitle from "~/components/CardTitle";
-import Skeleton from "~/components/Skeleton";
 import { AccountContext } from "~/context/account";
 import { EventContext } from "~/context/event";
 import { api } from "~/utils/api";
@@ -28,7 +29,7 @@ function List() {
 
   if (!payments) {
     return (
-      <Skeleton />
+      <CardLoading />
     )
   }
 
@@ -41,11 +42,11 @@ function List() {
   return (
     <ul>
       {payments.map(payment => (
-        <CardLi key={payment.id}>
-          <Link href={`/account/${accountId}/payments/${payment.id}`}>
-            {payment.id}
-          </Link>
-        </CardLi>
+        <CardLink
+          key={payment.id}
+          url={`/account/${accountId}/payments/${payment.id}`}
+          text={payment.id.toString()}
+        />
       ))}
     </ul>
   )

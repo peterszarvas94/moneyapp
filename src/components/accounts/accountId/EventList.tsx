@@ -1,9 +1,9 @@
 import { useContext } from "react";
 import Card from "~/components/Card";
 import CardLink from "~/components/CardLink";
+import CardLoading from "~/components/CardLoading";
 import CardNoItem from "~/components/CardNoItem";
 import CardTitle from "~/components/CardTitle";
-import Skeleton from "~/components/Skeleton";
 import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
@@ -22,7 +22,7 @@ function List() {
 
   if (!events) {
     return (
-      <Skeleton />
+      <CardLoading />
     )
   }
 
@@ -34,15 +34,13 @@ function List() {
 
   return (
     <ul>
-      {
-        events.map((event) => (
-          <li key={event.id} className="flex items-center">
-            <CardLink url={`/accounts/${accountId}/events/${event.id}`}>
-              {event.name}
-            </CardLink>
-          </li>
-        ))
-      }
+      {events.map((event) => (
+        <CardLink
+          key={event.id}
+          url={`/accounts/${accountId}/events/${event.id}`}
+          text={event.name}
+        />
+      ))}
     </ul>
   )
 }

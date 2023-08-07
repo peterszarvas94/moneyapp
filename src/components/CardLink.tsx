@@ -1,15 +1,19 @@
 import Link from "next/link";
-import { ReactNode } from "react";
 
 interface Props {
 	url: string;
-	children: ReactNode;
+	text: string;
 }
-function CardLink({ url, children }: Props) {
+function CardLink({ url, text }: Props) {
 	return (
-		<Link href={url} className="w-full flex items-center p-2 hover:bg-gray-600 hover:text-white">
-			{children}
-		</Link>
+		<li>
+			<Link
+				href={url}
+				className="w-full block p-2 hover:bg-gray-600 hover:text-white"
+			>
+				{text}
+			</Link>
+		</li>
 	)
 }
 
