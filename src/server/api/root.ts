@@ -1,16 +1,16 @@
 import { createTRPCRouter } from "~/server/api/trpc";
 import { userRouter } from "./routers/user";
 import { accountRouter } from "./routers/account";
-import { adminRouter } from "./routers/admin";
-import { viewerRouter } from "./routers/viewer";
 import { eventRouter } from "./routers/event";
+import { payeeRouter } from "./routers/payee";
+import { membershipRouter } from "./routers/membership";
 
 export const appRouter = createTRPCRouter({
   user: userRouter,
   account: accountRouter,
-  admin: adminRouter,
-  viewer: viewerRouter,
+  membership: membershipRouter,
   event: eventRouter,
+  payee: payeeRouter
 });
 
 // export type definition of API

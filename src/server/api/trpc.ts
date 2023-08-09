@@ -1,11 +1,10 @@
 import type { CreateNextContextOptions } from "@trpc/server/adapters/next";
-import type { Access } from "~/utils/types";
 import superjson from "superjson";
 import { TRPCError, initTRPC } from "@trpc/server";
 import { ZodError, z } from "zod";
 import { db } from "~/server/db/db";
 import { getAuth } from "@clerk/nextjs/server";
-import { User, accountAdmins, accountViewers, users } from "../db/schema";
+import { User, memberships, users } from "../db/schema";
 import { and, eq } from "drizzle-orm";
 
 // context:
@@ -17,7 +16,9 @@ export const createTRPCContext = (opts: CreateNextContextOptions) => {
 
   return {
     db,
-    clerkId,
+    self: {
+      clerkId,
+    },
   };
 };
 
@@ -45,7 +46,8 @@ export const publicProcedure = t.procedure;
 // middlewares:
 export const loggedInProcedure = publicProcedure
   .use(async ({ ctx, next }) => {
-    const { clerkId } = ctx;
+    const { clerkId } = ctx.self;
+
     if (!clerkId) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
@@ -76,8 +78,9 @@ export const loggedInProcedure = publicProcedure
     return next({
       ctx: {
         ...ctx,
-        clerkId,
-        user,
+        self: {
+          user
+        },
       },
     });
   });
@@ -87,66 +90,45 @@ export const accessedProcedure = loggedInProcedure
     accountId: z.string()
   }))
   .use(async ({ input, ctx, next }) => {
-    const { user: { id: userId } } = ctx;
+    const { id: userId } = ctx.self.user;
     const { accountId } = input;
 
-    let access: Access | undefined;
-
     try {
-      const admin = await ctx.db.query.accountAdmins.findFirst({
+      const role = await ctx.db.query.memberships.findFirst({
         where: and(
-          eq(accountAdmins.adminId, userId),
-          eq(accountAdmins.accountId, accountId)
+          eq(memberships.userId, userId),
+          eq(memberships.accountId, accountId)
         )
       });
 
-      if (admin) {
-        access = "admin";
+      if (!role) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "No access found",
+        });
       }
+
+      return next({
+        ctx: {
+          ...ctx,
+          accountId,
+          self: {
+            ...ctx.self,
+            access: role.access
+          }
+        },
+      });
     } catch (e) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Account admin retrieval failed",
+        message: "Role retrieval failed",
       })
     }
-
-    try {
-      const viewer = await ctx.db.query.accountViewers.findFirst({
-        where: and(
-          eq(accountViewers.viewerId, userId),
-          eq(accountViewers.accountId, accountId)
-        )
-      });
-      if (viewer) {
-        access = "viewer";
-      }
-    } catch (e) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Account viewer retrieval failed",
-      })
-    }
-
-    if (!access) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "No access found",
-      });
-    }
-
-    return next({
-      ctx: {
-        ...ctx,
-        access,
-        accountId,
-      },
-    });
-
   });
 
 export const adminProcedure = accessedProcedure
   .use(async ({ ctx, next }) => {
-    const { access } = ctx;
+    const { access } = ctx.self;
     if (access !== "admin") {
       throw new TRPCError({
         code: "UNAUTHORIZED",
@@ -155,4 +137,58 @@ export const adminProcedure = accessedProcedure
     }
 
     return next();
+  });
+
+export const userProcedure = adminProcedure
+  .input(z.object({
+    email: z.string().email()
+  }))
+  .use(async ({ input, ctx, next }) => {
+    const { email } = input;
+
+    let user: User | undefined = undefined;
+    try {
+      user = await ctx.db.query.users.findFirst({
+        where: eq(users.email, email)
+      });
+
+    } catch (e) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "User retrieval failed",
+      })
+    }
+
+    let access: "admin" | "viewer" | "denied" = "denied";
+    const { accountId } = ctx;
+
+    if (user) {
+      try {
+        const role = await ctx.db.query.memberships.findFirst({
+          where: and(
+            eq(memberships.userId, user.id),
+            eq(memberships.accountId, accountId)
+          )
+        })
+
+        if (role) {
+          access = role.access;
+        }
+      } catch {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Access retrieval failed"
+        })
+      }
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        check: {
+          access,
+          user: user || null,
+        },
+      },
+    })
   });

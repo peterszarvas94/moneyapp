@@ -3,7 +3,7 @@ import { useContext, useState } from "react";
 import Spinner from "~/components/Spinner";
 import { AccountContext } from "~/context/account";
 import { EventContext } from "~/context/event";
-import useEventIdParser from "~/hooks/useEventIdParser";
+import useEventId from "~/hooks/useEventId";
 import { api } from "~/utils/api";
 import EventDetails from "./EventDetails";
 import EditButton from "~/components/EditButton";
@@ -13,7 +13,7 @@ import PayemntList from "./PaymentList";
 import PageTitle from "~/components/PageTitle";
 
 function Content() {
-  const { eventId } = useEventIdParser();
+  const { eventId } = useEventId();
 
   if (!eventId) {
     return (
@@ -43,7 +43,7 @@ function IdParsed() {
       <EventDetails />
 
       {access === "admin" && !deleting && (
-        <div className="flex justify-center gap-2">
+        <div className="flex pt-4 justify-center gap-2">
           <EditButton
             url={`/accounts/${accountId}/events/${eventId}/edit`}
             text="Edit"
@@ -71,7 +71,7 @@ function IdParsed() {
       )}
 
       {access === "admin" && deleting && (
-        <div className="flex justify-center py-1">
+        <div className="flex pt-5 pb-1 justify-center py-1">
           <Spinner />
         </div>
       )}

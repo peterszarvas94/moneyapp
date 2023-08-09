@@ -12,13 +12,18 @@ import { useRouter } from "next/router";
 import { toast } from "react-hot-toast";
 import PageTitle from "~/components/PageTitle";
 import AccountDetails from "./AccountDetails";
+import PayeeList from "./PayeeList";
+import MemberList from "./MemberList";
 
-function Content() {
+export default function Content() {
   const router = useRouter();
+  const { refetch } = router.query;
+
   const { accountId, access } = useContext(AccountContext);
+
   const { data: account, refetch: getAccount } = api.account.get.useQuery({ accountId });
   const { mutateAsync: deleteAccount } = api.account.delete.useMutation();
-  const { refetch } = router.query;
+
   const [deleting, setDeleting] = useState<boolean>(false);
 
   useEffect(() => {
@@ -42,7 +47,7 @@ function Content() {
       <AccountDetails />
       {access === "admin" && !deleting && (
         <>
-          <div className="px-4 flex justify-center gap-2">
+          <div className="pt-4 flex justify-center gap-2">
             <EditButton
               url={`/accounts/${account.id}/edit`}
               text="Edit"
@@ -68,36 +73,35 @@ function Content() {
       )}
 
       {access === "admin" && deleting && (
-        <div className="flex py-1 justify-center items-center">
+        <div className="flex pt-5 pb-1 justify-center items-center">
           <Spinner />
         </div>
       )}
 
-      <AdminList />
+      <MemberList />
 
       {access === "admin" && (
-        <div className="px-4 flex justify-center">
-          <AddButton url={`/accounts/${accountId}/admins/new`} text="New admin" />
+        <div className="pt-4 flex justify-center">
+          <AddButton url={`/accounts/${accountId}/members/new`} text="New member" />
         </div>
       )}
 
-      <ViewerList />
-
-      {access === "admin" && (
-        <div className="px-4 flex justify-center">
-          <AddButton url={`/accounts/${accountId}/viewers/new`} text="New viewer" />
-        </div>
-      )}
 
       <EventList />
 
       {access === "admin" && (
-        <div className="px-4 flex justify-center">
+        <div className="pt-4 flex justify-center">
           <AddButton url={`/accounts/${accountId}/events/new`} text="New event" />
+        </div>
+      )}
+
+      <PayeeList />
+
+      {access === "admin" && (
+        <div className="py-4 flex justify-center">
+          <AddButton url={`/accounts/${accountId}/payees/new`} text="New payee" />
         </div>
       )}
     </>
   )
 }
-
-export default Content;

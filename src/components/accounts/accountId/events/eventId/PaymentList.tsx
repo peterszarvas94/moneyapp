@@ -1,7 +1,5 @@
-import Link from "next/link";
 import { useContext } from "react";
 import Card from "~/components/Card";
-import CardLi from "~/components/CardLi";
 import CardLink from "~/components/CardLink";
 import CardLoading from "~/components/CardLoading";
 import CardNoItem from "~/components/CardNoItem";
@@ -13,10 +11,12 @@ import { api } from "~/utils/api";
 function PayemntList() {
 
   return (
-    <Card>
-      <CardTitle title="Payments" />
-      <List />
-    </Card>
+    <div className="px-4 pt-4">
+      <Card>
+        <CardTitle title="Payments" />
+        <List />
+      </Card>
+    </div>
   )
 }
 

@@ -103,7 +103,7 @@ export const userRouter = createTRPCRouter({
 
   getSelf: loggedInProcedure
     .query(async ({ ctx }): Promise<User | null> => {
-      const { clerkId } = ctx;
+      const { clerkId } = ctx.self.user;
       try {
         const user = await ctx.db.query.users.findFirst({
           where: eq(users.clerkId, clerkId),

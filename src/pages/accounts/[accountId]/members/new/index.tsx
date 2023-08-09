@@ -1,6 +1,5 @@
 import type { NextPage } from "next";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import useAccountIdParser from "~/hooks/useAccountIdParser";
 import { api } from "~/utils/api";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/router";
@@ -11,17 +10,19 @@ import { AccountContext } from "~/context/account";
 import HeadElement from "~/components/Head";
 import Header from "~/components/Header";
 import PageTitle from "~/components/PageTitle";
-import Label from "~/components/Label";
-import { Input } from "~/components/Input";
-import SubmitButton from "~/components/SubmitButton";
 import { z } from "zod";
 import { TRPCClientError } from "@trpc/client";
+import Label from "~/components/Label";
+import SubmitButton from "~/components/SubmitButton";
+import { Input } from "~/components/Input";
 import usePageLoader from "~/hooks/usePageLoader";
+import { Access } from "~/utils/types";
+import Select from "~/components/Select";
 
-const NewAdminPage: NextPage = () => {
+const NewViewerPage: NextPage = () => {
   return (
     <>
-      <HeadElement title="New Admin - Moneyapp" description="Split the money" />
+      <HeadElement title="New Member - Moneyapp" description="Split the money" />
       <Header />
       <main>
         <Page />
@@ -30,7 +31,7 @@ const NewAdminPage: NextPage = () => {
   );
 }
 
-export default NewAdminPage;
+export default NewViewerPage;
 
 function Page() {
   const { accountId, access } = usePageLoader();
@@ -57,25 +58,19 @@ function Page() {
 }
 
 type Form = {
-  email: string
+  email: string;
+  access: Access;
 }
 function AdminContent() {
   const router = useRouter();
   const { accountId } = useContext(AccountContext);
-  const { data: self } = api.user.getSelf.useQuery();
   const { handleSubmit, control } = useForm<Form>();
-  const { mutateAsync: checkAdmin } = api.admin.checkAccessByEmail.useMutation();
-  const { mutateAsync: checkViewer } = api.viewer.checkAccessByEmail.useMutation();
-  const { mutateAsync: addAdmin } = api.admin.addByEmail.useMutation();
+  const { mutateAsync: addViewer } = api.membership.addByEmail.useMutation();
   const [saving, setSaving] = useState<boolean>(false);
 
-  const onSubmit: SubmitHandler<Form> = async ({ email }) => {
+  const onSubmit: SubmitHandler<Form> = async (data) => {
     setSaving(true);
-    if (self && self.email === email) {
-      toast.error("You are already an admin");
-      setSaving(false);
-      return;
-    }
+    const { email, access } = data;
 
     try {
       z.string().email().parse(email);
@@ -86,34 +81,8 @@ function AdminContent() {
     }
 
     try {
-      const isAdmin = await checkAdmin({ accountId, email });
-      if (isAdmin) {
-        toast.error("User is already an admin");
-        setSaving(false);
-        return;
-      }
-    } catch (error) {
-      toast.error("Something went wrong");
-      setSaving(false);
-      return;
-    }
-
-    try {
-      const isViewer = await checkViewer({ accountId, email });
-      if (isViewer) {
-        toast.error("User is already a viewer");
-        setSaving(false);
-        return;
-      }
-    } catch (error) {
-      toast.error("Something went wrong");
-      setSaving(false);
-      return;
-    }
-
-    try {
-      await addAdmin({ accountId, email });
-      toast.success("Admin added");
+      await addViewer({ accountId, email, access });
+      toast.success("Viewer added");
       router.push(`/accounts/${accountId}`);
     } catch (error) {
       const trpcError = error as TRPCClientError<any>
@@ -123,15 +92,27 @@ function AdminContent() {
         return;
       }
 
+      if (trpcError.data?.code === "CONFLICT") {
+        toast.error("User is already an admin or viewer");
+        setSaving(false);
+        return;
+      }
+
       toast.error("Something went wrong");
       setSaving(false);
     }
   }
 
+  if (!accountId) {
+    return (
+      <Spinner />
+    )
+  }
+
   return (
     <>
-      <PageTitle title="Add New Admin" />
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col pt-4 px-2">
+      <PageTitle title="Add New Member" />
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col px-2">
         <Label htmlFor="email" text="Email" />
         <Controller
           control={control}
@@ -144,6 +125,25 @@ function AdminContent() {
               setValue={field.onChange}
               type="email"
               required={true}
+            />
+          )}
+        />
+
+        <Label htmlFor="access" text="Access" />
+        <Controller
+          control={control}
+          name="access"
+          rules={{ required: true }}
+          defaultValue="viewer"
+          render={({ field }) => (
+            <Select
+              value={field.value}
+              setValue={field.onChange}
+              required={true}
+              options={[
+                { value: "viewer", label: "Viewer" },
+                { value: "admin", label: "Admin" },
+              ]}
             />
           )}
         />

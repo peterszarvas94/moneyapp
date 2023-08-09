@@ -10,10 +10,12 @@ import { parseDate } from "~/utils/date";
 
 function EventDetails() {
   return (
-    <Card>
-      <CardTitle title="Event details" />
-      <Details />
-    </Card>
+    <div className="px-4">
+      <Card>
+        <CardTitle title="Event details" />
+        <Details />
+      </Card>
+    </div >
   )
 }
 

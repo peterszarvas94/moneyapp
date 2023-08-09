@@ -1,12 +1,16 @@
 import type { Access } from "~/utils/types";
-import type { Account, User, Event, NewAccount } from "~/server/db/schema";
+import type { Account, User, Event, NewAccount, Payee } from "~/server/db/schema";
 import { z } from "zod";
 import { accessedProcedure, adminProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
-import { accountAdmins, accountViewers, accounts, events } from "~/server/db/schema";
+import { accounts, events, payees, memberships } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
+type Role = {
+  access: Access,
+  user: User,
+}
 export const accountRouter = createTRPCRouter({
   new: loggedInProcedure
     .input(z.object({
@@ -14,13 +18,13 @@ export const accountRouter = createTRPCRouter({
       description: z.string().optional().nullable(),
       currency: z.string()
     }))
-    .mutation(async ({ input, ctx }): Promise<true> => {
-      const id = nanoid();
+    .mutation(async ({ input, ctx }): Promise<string> => {
+      const accountId = nanoid();
       const { name, description, currency } = input;
       const now = new Date();
 
       const newAccount: NewAccount = {
-        id,
+        id: accountId,
         name,
         description: description || null,
         currency: currency,
@@ -37,20 +41,24 @@ export const accountRouter = createTRPCRouter({
         })
       }
 
-      const { user: { id: adminId } } = ctx;
+      const { id: userId } = ctx.self.user;
       try {
-        await ctx.db.insert(accountAdmins).values({
-          adminId,
-          accountId: id,
+        await ctx.db.insert(memberships).values({
+          id: nanoid(),
+          userId,
+          accountId: accountId,
+          access: "admin",
           createdAt: now,
+          updatedAt: now,
         })
-        return true;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Account admin creation failed",
         })
       }
+
+      return accountId;
     }),
 
   update: adminProcedure
@@ -94,20 +102,9 @@ export const accountRouter = createTRPCRouter({
         })
       }
 
-      // delete viewers
+      // delete roles
       try {
-        await ctx.db.delete(accountViewers).where(eq(accountViewers.accountId, accountId));
-      } catch (e) {
-        console.log(e);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Viewers deletion failed",
-        })
-      }
-
-      // delete admins
-      try {
-        await ctx.db.delete(accountAdmins).where(eq(accountAdmins.accountId, accountId));
+        await ctx.db.delete(memberships).where(eq(memberships.accountId, accountId));
       } catch (e) {
         console.log(e);
         throw new TRPCError({
@@ -131,14 +128,7 @@ export const accountRouter = createTRPCRouter({
 
   checkAccess: accessedProcedure
     .mutation(async ({ ctx }): Promise<Access> => {
-      const { access } = ctx;
-      return access;
-    }),
-
-  // remove
-  getAccess: accessedProcedure
-    .query(async ({ ctx }): Promise<Access | null> => {
-      const { access } = ctx;
+      const { access } = ctx.self;
       return access;
     }),
 
@@ -161,44 +151,27 @@ export const accountRouter = createTRPCRouter({
       }
     }),
 
-  getAdmins: accessedProcedure
-    .query(async ({ ctx }): Promise<User[] | null> => {
+  getRoles: accessedProcedure
+    .query(async ({ ctx }): Promise<Role[] | null> => {
       const { accountId } = ctx;
 
       try {
-        const query = await ctx.db.query.accountAdmins.findMany({
-          where: eq(accountAdmins.accountId, accountId),
+        const myRoles = await ctx.db.query.memberships.findMany({
+          columns: {
+            access: true,
+          },
+          where: and(
+            eq(memberships.accountId, accountId),
+          ),
           with: {
-            admin: true,
+            user: true,
           }
         });
-        const admins: User[] = query.map((r) => r.admin);
-        return admins;
+        return myRoles;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Account admins retrieval by accountId failed",
-        })
-      }
-    }),
-
-  getViewers: accessedProcedure
-    .query(async ({ ctx }): Promise<User[] | null> => {
-      const { accountId } = ctx;
-
-      try {
-        const query = await ctx.db.query.accountViewers.findMany({
-          where: eq(accountViewers.accountId, accountId),
-          with: {
-            viewer: true,
-          }
-        });
-        const viewers: User[] = query.map((r) => r.viewer);
-        return viewers;
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Account viewers retrieval by accountId failed",
         })
       }
     }),
@@ -210,7 +183,7 @@ export const accountRouter = createTRPCRouter({
       try {
         const queriedEvents = await ctx.db.query.events.findMany({
           where: eq(events.accountId, accountId),
-        }).execute();
+        });
         return queriedEvents;
       } catch (e) {
         throw new TRPCError({
@@ -220,4 +193,21 @@ export const accountRouter = createTRPCRouter({
       }
     }),
 
+  getPayees: accessedProcedure
+    .query(async ({ ctx }): Promise<Payee[] | null> => {
+      const { accountId } = ctx;
+
+      try {
+        const queriedPayees = await ctx.db.query.payees.findMany({
+          where: eq(payees.accountId, accountId),
+        });
+        return queriedPayees;
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Payee retrieval by accountId failed",
+        })
+      }
+    }),
+      
 });

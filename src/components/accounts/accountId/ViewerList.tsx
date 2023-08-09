@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { TiDelete } from "react-icons/ti";
 import Card from "~/components/Card";
@@ -7,24 +7,37 @@ import CardLoading from "~/components/CardLoading";
 import CardNoItem from "~/components/CardNoItem";
 import CardTitle from "~/components/CardTitle";
 import { AccountContext } from "~/context/account";
+import { User } from "~/server/db/schema";
 import { api } from "~/utils/api";
 
-function ViewerList() {
+export default function ViewerList() {
   return (
-    <Card>
-      <CardTitle title="Viewers" />
-      <List />
-    </Card>
+    <div className="px-4 pt-4">
+      <Card>
+        <CardTitle title="Viewers" />
+        <List />
+      </Card>
+    </div>
   )
 }
 
+
 function List() {
   const { accountId, access } = useContext(AccountContext);
-  const { data: viewers, refetch: getViewers } = api.account.getViewers.useQuery({ accountId });
+  const { data: roles, refetch: getRoles } = api.account.getRoles.useQuery({ accountId });
   const { data: account } = api.account.get.useQuery({ accountId });
-  const { mutateAsync: deleteViewer } = api.viewer.delete.useMutation();
+  const { data: self } = api.user.getSelf.useQuery();
+  const { mutateAsync: deleteRole } = api.membership.delete.useMutation();
+  const [viewers, setViewers] = useState<User[]>([]);
 
-  if (!viewers) {
+  useEffect(() => {
+    if (roles) {
+      const newViewers = roles?.filter(e => e.access === "viewer").map(e => e.user);
+      setViewers(newViewers);
+    }
+  }, [roles]);
+
+  if (!roles || !self || !account) {
     return (
       <CardLoading />
     )
@@ -53,12 +66,12 @@ function List() {
 
                   if (confirm(`Are you sure you want to delete ${viewer.name} (${viewer.email}) as viewer of account ${account.name}?`)) {
                     try {
-                      await deleteViewer({
+                      await deleteRole({
                         userId: viewer.id,
                         accountId: account.id
                       })
                       toast.success('Viewer deleted');
-                      getViewers();
+                      getRoles();
                     } catch (e) { }
                   }
                 }}
@@ -72,5 +85,3 @@ function List() {
     </ul>
   )
 }
-
-export default ViewerList;

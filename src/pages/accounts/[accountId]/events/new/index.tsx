@@ -13,7 +13,6 @@ import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
 import { AccountContext } from "~/context/account";
-import useAccountIdParser from "~/hooks/useAccountIdParser";
 import usePageLoader from "~/hooks/usePageLoader";
 import { api } from "~/utils/api";
 
@@ -130,7 +129,7 @@ function AdminContent() {
   return (
     <>
       <PageTitle title="Create New Event" />
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col px-2">
         <Label htmlFor="name" text="Name" />
         <Controller
           control={control}
@@ -162,7 +161,6 @@ function AdminContent() {
             />
           )}
         />
-
 
         <Label htmlFor="delivery" text="Delivery date" />
         <Controller

@@ -14,10 +14,10 @@ import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
 import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
-import useEventIdParser from "~/hooks/useEventIdParser";
 import { EventContext } from "~/context/event";
 import { parseDate } from "~/utils/date";
 import usePageLoader from "~/hooks/usePageLoader";
+import useEventId from "~/hooks/useEventId";
 
 const EditEventPage: NextPage = () => {
   return (
@@ -35,7 +35,7 @@ export default EditEventPage;
 
 function Page() {
   const { accountId, access } = usePageLoader();
-  const { eventId } = useEventIdParser();
+  const { eventId } = useEventId();
 
   if (!accountId || !eventId || !access) {
     return (

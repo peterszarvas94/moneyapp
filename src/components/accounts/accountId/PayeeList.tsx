@@ -11,7 +11,7 @@ function EventList() {
   return (
     <div className="px-4 pt-4">
       <Card>
-        <CardTitle title="Events" />
+        <CardTitle title="Payees" />
         <List />
       </Card>
     </div>
@@ -20,27 +20,27 @@ function EventList() {
 
 function List() {
   const { accountId } = useContext(AccountContext);
-  const { data: events } = api.account.getEvents.useQuery({ accountId });
+  const { data: payees } = api.account.getPayees.useQuery({ accountId });
 
-  if (!events) {
+  if (!payees) {
     return (
       <CardLoading />
     )
   }
 
-  if (events.length === 0) {
+  if (payees.length === 0) {
     return (
-      <CardNoItem>No events</CardNoItem>
+      <CardNoItem>No payees</CardNoItem>
     )
   }
 
   return (
     <ul>
-      {events.map((event) => (
+      {payees.map((payee) => (
         <CardLink
-          key={event.id}
-          url={`/accounts/${accountId}/events/${event.id}`}
-          text={event.name}
+          key={payee.id}
+          url={`/accounts/${accountId}/payees/${payee.id}`}
+          text={payee.name}
         />
       ))}
     </ul>

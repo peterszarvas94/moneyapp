@@ -8,10 +8,12 @@ import { api } from "~/utils/api";
 
 function AccountDetails() {
   return (
-    <Card>
-      <CardTitle title="Account Details" />
-      <Details />
-    </Card>
+    <div className="px-4">
+      <Card>
+        <CardTitle title="Account Details" />
+        <Details />
+      </Card>
+    </div >
   )
 }
 

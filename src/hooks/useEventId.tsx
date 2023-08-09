@@ -1,20 +1,20 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
-function useAccountIdParser() {
+function useEventId() {
   const router = useRouter();
-  const { accountId } = router.query;
+  const { eventId } = router.query;
   const [realId, setRealId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof accountId === "string") {
-      setRealId(accountId);
+    if (typeof eventId === "string") {
+      setRealId(eventId);
     }
-  }, [accountId]);
+  }, [eventId]);
 
   return {
-    accountId: realId
+    eventId: realId
   }
 }
 
-export default useAccountIdParser;
+export default useEventId;

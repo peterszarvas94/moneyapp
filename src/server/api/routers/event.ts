@@ -1,6 +1,6 @@
 import type { Payment, Event, NewEvent } from "~/server/db/schema";
 import { z } from "zod";
-import { accessedProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { accessedProcedure, adminProcedure, createTRPCRouter } from "~/server/api/trpc";
 import { events, payments } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
@@ -40,7 +40,7 @@ export const eventRouter = createTRPCRouter({
       return event;
     }),
 
-  new: accessedProcedure
+  new: adminProcedure
     .input(z.object({
       name: z.string(),
       description: z.string().optional().nullable(),
@@ -84,7 +84,7 @@ export const eventRouter = createTRPCRouter({
       }
     }),
 
-  update: accessedProcedure
+  update: adminProcedure
     .input(z.object({
       eventId: z.string(),
       name: z.string(),
@@ -126,7 +126,7 @@ export const eventRouter = createTRPCRouter({
       }
     }),
 
-  delete: accessedProcedure
+  delete: adminProcedure
     .input(z.object({
       eventId: z.string()
     }))
@@ -156,27 +156,21 @@ export const eventRouter = createTRPCRouter({
       const { eventId } = input;
       const { accountId } = ctx;
 
+      let myPayments: Payment[] | undefined;
       try {
-        const myPayments = await ctx.db.query.payments.findMany({
+        myPayments = await ctx.db.query.payments.findMany({
           where: and(
             eq(payments.eventId, eventId),
             eq(payments.accountId, accountId),
           ),
         });
-
-        if (!myPayments) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Payments not found",
-          })
-        }
-
-        return myPayments;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Payments retrieval failed",
         })
       }
+
+      return myPayments;
     }),
 });

@@ -36,9 +36,9 @@ function Page() {
     setSaving(true);
 
     try {
-      await createAccount(data);
+      const accountId = await createAccount(data);
       toast.success("Account created");
-      router.push("/accounts");
+      router.push(`/accounts/${accountId}`);
     } catch (e) {
       toast.error("Account creation failed");
       setSaving(false);
@@ -47,7 +47,7 @@ function Page() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col px-2">
       <Label htmlFor='name' text="Name" />
       <Controller
         control={control}

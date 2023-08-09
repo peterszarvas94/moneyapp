@@ -39,7 +39,7 @@ function Page() {
     )
   }
 
-  if (access === "denied") {
+  if (access === "denied" || access === "viewer") {
     return (
       <NoAccess />
     )
@@ -54,36 +54,19 @@ function Page() {
 
 function Content() {
   const { accountId } = useContext(AccountContext);
-  const { data: account, error } = api.account.get.useQuery({ accountId });
-
-  if (error) {
-    return (
-      <p>Account not found</p>
-    )
-  }
-
-  if (!account) {
-    return (
-      <Spinner />
-    )
-  }
-
-  return (
-    <AccountFound account={account} />
-  )
-}
-
-
-interface Props {
-  account: Account
-}
-function AccountFound({ account }: Props) {
-
+  const { data: account } = api.account.get.useQuery({ accountId });
   const router = useRouter();
-  const { accountId } = useContext(AccountContext);
   const { mutateAsync: editAccount } = api.account.update.useMutation();
   const { handleSubmit, control } = useForm<NewAccount>();
   const [saving, setSaving] = useState<boolean>(false);
+
+  if (!account) {
+    return (
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
+    )
+  }
 
   const onSubmit: SubmitHandler<NewAccount> = async ({ name, currency, description }) => {
     setSaving(true);
@@ -107,7 +90,7 @@ function AccountFound({ account }: Props) {
     <>
       <PageTitle title="Edit Account" />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col px-2">
         <Label htmlFor='name' text="Name" />
         <Controller
           control={control}
