@@ -1,19 +1,19 @@
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import PageTitle from "~/components/PageTitle";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 
-const PayeePage: NextPage = () => {
+const MemberPage: NextPage = () => {
   return (
-    <AccessedPage title="Account - Moneyapp" accessible="viewer">
+    <AccessedPage title="Member - Moneyapp" accessible="viewer" >
       <Content />
     </AccessedPage>
   )
 }
 
-export default PayeePage;
+export default MemberPage;
 
 function Content() {
   return (
-    <PageTitle title="Payee" /> 
+    <PageTitle title="Member" />
   )
 }

@@ -6,3 +6,11 @@ Dev process:
 - npm run studio
 - change url in clerk path
 - change url in clerk webhook
+
+Todo:
+
+- [ ] add: member page
+- [ ] add: edit member page
+- [ ] add: payee page
+- [ ] add: edit payee page 
+- [ ] check: backlinks

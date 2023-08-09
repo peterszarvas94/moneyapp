@@ -4,64 +4,33 @@ import { api } from "~/utils/api";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/router";
 import { useContext, useState } from "react";
-import NoAccess from "~/components/NoAccess";
 import Spinner from "~/components/Spinner";
 import { AccountContext } from "~/context/account";
-import HeadElement from "~/components/Head";
-import Header from "~/components/Header";
 import PageTitle from "~/components/PageTitle";
 import { z } from "zod";
 import { TRPCClientError } from "@trpc/client";
 import Label from "~/components/Label";
 import SubmitButton from "~/components/SubmitButton";
 import { Input } from "~/components/Input";
-import usePageLoader from "~/hooks/usePageLoader";
 import { Access } from "~/utils/types";
 import Select from "~/components/Select";
+import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 
-const NewViewerPage: NextPage = () => {
+const NewMemberPage: NextPage = () => {
   return (
-    <>
-      <HeadElement title="New Member - Moneyapp" description="Split the money" />
-      <Header />
-      <main>
-        <Page />
-      </main>
-    </>
-  );
-}
-
-export default NewViewerPage;
-
-function Page() {
-  const { accountId, access } = usePageLoader();
-
-  if (!accountId || !access) {
-    return (
-      <div className="flex justify-center py-6">
-        <Spinner />
-      </div>
-    )
-  }
-
-  if (access === "denied" || access === "viewer") {
-    return (
-      <NoAccess />
-    )
-  }
-
-  return (
-    <AccountContext.Provider value={{ accountId, access }}>
-      <AdminContent />
-    </AccountContext.Provider>
+    <AccessedPage title="Member - Moneyapp" accessible="admin" >
+      <Content />
+    </AccessedPage>
   )
 }
+
+export default NewMemberPage;
 
 type Form = {
   email: string;
   access: Access;
 }
-function AdminContent() {
+function Content() {
   const router = useRouter();
   const { accountId } = useContext(AccountContext);
   const { handleSubmit, control } = useForm<Form>();

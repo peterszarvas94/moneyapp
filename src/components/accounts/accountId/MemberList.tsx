@@ -1,32 +1,27 @@
-import { TRPCClientError } from "@trpc/client";
-import { TRPCErrorShape } from "@trpc/server/rpc";
 import { useContext, useEffect, useState } from "react";
-import { toast } from "react-hot-toast";
-import { TiDelete } from "react-icons/ti";
 import Card from "~/components/Card";
-import CardLi from "~/components/CardLi";
+import CardLink from "~/components/CardLink";
 import CardLoading from "~/components/CardLoading";
 import CardNoItem from "~/components/CardNoItem";
 import CardTitle from "~/components/CardTitle";
 import { AccountContext } from "~/context/account";
-import { User } from "~/server/db/schema";
 import { api } from "~/utils/api";
+import { Member } from "~/utils/types";
 
 export default function MemberList() {
   const { accountId } = useContext(AccountContext);
-  const { data: roles, refetch } = api.account.getRoles.useQuery({ accountId });
+  const { data: roles } = api.account.getMembers.useQuery({ accountId });
 
-  const [admins, setAdmins] = useState<User[] | null>(null);
-  const [viewers, setViewers] = useState<User[] | null>(null);
+  const [admins, setAdmins] = useState<Member[] | null>(null);
+  const [viewers, setViewers] = useState<Member[] | null>(null);
 
   useEffect(() => {
     if (roles) {
-      const newAdmins = roles.filter(role => role.access === "admin").map(role => role.user);
+      const newAdmins = roles.filter(role => role.access === "admin")
       setAdmins(newAdmins);
 
-      const newViewers = roles.filter(role => role.access === "viewer").map(role => role.user);
+      const newViewers = roles.filter(role => role.access === "viewer")
       setViewers(newViewers);
-      console.log(roles);
     }
   }, [roles]);
 
@@ -35,13 +30,13 @@ export default function MemberList() {
       <div className="px-4 pt-4">
         <Card>
           <CardTitle title="Admins" />
-          <List nodata="No admins." users={admins} refetch={refetch} />
+          <List nodata="No admins." members={admins} />
         </Card>
       </div>
       <div className="px-4 pt-4">
         <Card>
           <CardTitle title="Viewers" />
-          <List nodata="No viewers." users={viewers} refetch={refetch}/>
+          <List nodata="No viewers." members={viewers} />
         </Card>
       </div>
     </>
@@ -50,22 +45,20 @@ export default function MemberList() {
 
 interface Props {
   nodata: string,
-  users: User[] | null,
-  refetch: () => void
+  members: Member[] | null,
 }
 
-function List({ nodata, users, refetch }: Props) {
-  const { accountId, access } = useContext(AccountContext);
+function List({ nodata, members }: Props) {
+  const { accountId } = useContext(AccountContext);
   const { data: self } = api.user.getSelf.useQuery();
-  const { mutateAsync: deleteRole } = api.membership.delete.useMutation();
 
-  if (!users || !self) {
+  if (!members || !self) {
     return (
       <CardLoading />
     )
   }
 
-  if (users.length === 0) {
+  if (members.length === 0) {
     return (
       <CardNoItem>{nodata}</CardNoItem>
     )
@@ -74,33 +67,12 @@ function List({ nodata, users, refetch }: Props) {
   return (
     <ul>
       {
-        users.map((user) => (
-          <CardLi key={user.id}>
-            <div>{`${user.name} (${user.email})`}</div>
-
-            {access === "admin" && user.id !== self.id && (
-              <button
-                className="text-xl"
-                onClick={async () => {
-                  if (confirm(`Are you sure you want to delete ${user.name} (${user.email}) from this account?`)) {
-                    try {
-                      await deleteRole({
-                        userId: user.id,
-                        accountId
-                      })
-                      toast.success('Admin deleted');
-                      refetch();
-                    } catch (e) {
-                      const err = e as TRPCClientError<TRPCErrorShape>;
-                      toast.error(err.message);
-                    }
-                  }
-                }}
-              >
-                <TiDelete className="hover:text-red-400" />
-              </button>
-            )}
-          </CardLi>
+        members.map((member) => (
+          <CardLink
+            key={member.id}
+            url={`/accounts/${accountId}/members/${member.id}`}
+            text={`${member.user.name} (${member.user.email})`}
+          />
         ))
       }
     </ul>

@@ -1,58 +1,27 @@
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useContext, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import HeadElement from "~/components/Head";
-import Header from "~/components/Header";
 import { Input } from "~/components/Input";
 import { InputNumber } from "~/components/InputNumber";
 import Label from "~/components/Label";
-import NoAccess from "~/components/NoAccess";
 import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
 import { AccountContext } from "~/context/account";
-import usePageLoader from "~/hooks/usePageLoader";
 import { api } from "~/utils/api";
+import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 
 const NewEventPage: NextPage = () => {
   return (
-    <>
-      <HeadElement title="New Event - Moneyapp" description="Split the money" />
-      <Header />
-      <main>
-        <Page />
-      </main>
-    </>
-  );
+    <AccessedPage title="Member - Moneyapp" accessible="admin" >
+      <Content />
+    </AccessedPage>
+  )
 }
 
 export default NewEventPage;
-
-function Page() {
-  const { accountId, access } = usePageLoader();
-
-  if (!accountId || !access) {
-    return (
-      <div className="flex justify-center py-6">
-        <Spinner />
-      </div>
-    )
-  }
-
-  if (access === "denied" || access === "viewer") {
-    return (
-      <NoAccess />
-    )
-  }
-
-  return (
-    <AccountContext.Provider value={{ accountId, access }}>
-      <AdminContent />
-    </AccountContext.Provider>
-  )
-}
 
 type NewEvent = {
   name: string,
@@ -61,7 +30,7 @@ type NewEvent = {
   saving: string,
   delivery: string,
 }
-function AdminContent() {
+function Content() {
   const { accountId } = useContext(AccountContext);
   const { data: account } = api.account.get.useQuery({ accountId });
   const router = useRouter();

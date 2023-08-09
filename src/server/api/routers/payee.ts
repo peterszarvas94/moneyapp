@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { accessedProcedure, adminProcedure, createTRPCRouter, userProcedure } from "~/server/api/trpc";
-import { Account, Membership, NewPayee, Payee, User, accounts, memberships, payees, users } from "~/server/db/schema";
+import { adminProcedure, createTRPCRouter} from "~/server/api/trpc";
+import { Membership, Payee, User, memberships, payees, users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { eq, and } from "drizzle-orm";
@@ -11,7 +11,7 @@ export const payeeRouter = createTRPCRouter({
       name: z.string(),
       email: z.string().email().optional(),
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }): Promise<string> => {
       const { name, email } = input;
       const { accountId } = ctx;
 
@@ -94,6 +94,7 @@ export const payeeRouter = createTRPCRouter({
           createdAt: now,
           updatedAt: now,
         })
+        return id;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

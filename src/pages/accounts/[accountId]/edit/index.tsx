@@ -1,56 +1,27 @@
-import type { Account, NewAccount } from "~/server/db/schema";
-import type { NextPage } from "next";
-import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import { api } from "~/utils/api";
-import { useRouter } from "next/router";
-import HeadElement from "~/components/Head";
-import PageTitle from "~/components/PageTitle";
-import Label from "~/components/Label";
-import { Input } from "~/components/Input";
-import SubmitButton from "~/components/SubmitButton";
-import Header from "~/components/Header";
-import { AccountContext } from "~/context/account";
+import { NextPage } from "next";
+import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import { useContext, useState } from "react";
+import { AccountContext } from "~/context/account";
+import { useRouter } from "next/router";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import { NewAccount } from "~/server/db/schema";
 import Spinner from "~/components/Spinner";
-import NoAccess from "~/components/NoAccess";
-import usePageLoader from "~/hooks/usePageLoader";
+import { api } from "~/utils/api";
+import SubmitButton from "~/components/SubmitButton";
+import { Input } from "~/components/Input";
+import Label from "~/components/Label";
+import PageTitle from "~/components/PageTitle";
 
 const EditAccountPage: NextPage = () => {
   return (
-    <>
-      <HeadElement title="Edit Account - Moneyapp" description="Split the money" />
-      <Header />
-      <main>
-        <Page />
-      </main>
-    </>
-  )
-}
-
-function Page() {
-  const { accountId, access } = usePageLoader();
-
-  if (!accountId || !access) {
-    return (
-      <div className="flex justify-center py-6">
-        <Spinner />
-      </div>
-    )
-  }
-
-  if (access === "denied" || access === "viewer") {
-    return (
-      <NoAccess />
-    )
-  }
-
-  return (
-    <AccountContext.Provider value={{ accountId, access }}>
+    <AccessedPage title="Account - Moneyapp" accessible="admin">
       <Content />
-    </AccountContext.Provider>
+    </AccessedPage>
   )
 }
+
+export default EditAccountPage;
 
 function Content() {
   const { accountId } = useContext(AccountContext);
@@ -151,5 +122,3 @@ function Content() {
     </>
   )
 }
-
-export default EditAccountPage;

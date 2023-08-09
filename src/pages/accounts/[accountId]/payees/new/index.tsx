@@ -6,63 +6,32 @@ import { useContext, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
-import HeadElement from "~/components/Head";
-import Header from "~/components/Header";
 import { Input } from "~/components/Input";
 import { InputUser } from "~/components/InputUser";
 import Label from "~/components/Label";
-import NoAccess from "~/components/NoAccess";
 import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
+import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import { AccountContext } from "~/context/account";
-import usePageLoader from "~/hooks/usePageLoader";
 import { api } from "~/utils/api";
 
 const NewPayeePage: NextPage = () => {
   return (
-    <>
-      <HeadElement title="New Payee - Moneyapp" description="Split the money" />
-      <Header />
-      <main>
-        <Page />
-      </main>
-    </>
-  );
+    <AccessedPage title="Member - Moneyapp" accessible="admin" >
+      <Content />
+    </AccessedPage>
+  )
 }
 
 export default NewPayeePage;
-
-function Page() {
-  const { accountId, access } = usePageLoader();
-
-  if (!accountId || !access) {
-    return (
-      <div className="flex justify-center py-6">
-        <Spinner />
-      </div>
-    )
-  }
-
-  if (access === "denied" || access === "viewer") {
-    return (
-      <NoAccess />
-    )
-  }
-
-  return (
-    <AccountContext.Provider value={{ accountId, access }}>
-      <AdminContent />
-    </AccountContext.Provider>
-  )
-}
 
 type NewPayee = {
   name: string;
   email?: string;
 }
 
-function AdminContent() {
+function Content() {
   const { accountId } = useContext(AccountContext);
   const { data: account } = api.account.get.useQuery({ accountId });
   const router = useRouter();
@@ -166,4 +135,3 @@ function AdminContent() {
     </>
   )
 }
-

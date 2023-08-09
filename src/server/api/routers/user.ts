@@ -31,7 +31,6 @@ export const userRouter = createTRPCRouter({
         await ctx.db.insert(users).values(newUser);
         return true;
       } catch (e) {
-        console.log(e);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "User creation failed",

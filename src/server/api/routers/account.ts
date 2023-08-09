@@ -1,5 +1,5 @@
-import type { Access } from "~/utils/types";
-import type { Account, User, Event, NewAccount, Payee } from "~/server/db/schema";
+import type { Access, Member } from "~/utils/types";
+import type { Account, User, Event, NewAccount, Payee, Membership } from "~/server/db/schema";
 import { z } from "zod";
 import { accessedProcedure, adminProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
 import { accounts, events, payees, memberships } from "~/server/db/schema";
@@ -7,10 +7,6 @@ import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
-type Role = {
-  access: Access,
-  user: User,
-}
 export const accountRouter = createTRPCRouter({
   new: loggedInProcedure
     .input(z.object({
@@ -95,7 +91,6 @@ export const accountRouter = createTRPCRouter({
       try {
         await ctx.db.delete(events).where(eq(events.accountId, accountId));
       } catch (e) {
-        console.log(e);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Events deletion failed",
@@ -106,7 +101,6 @@ export const accountRouter = createTRPCRouter({
       try {
         await ctx.db.delete(memberships).where(eq(memberships.accountId, accountId));
       } catch (e) {
-        console.log(e);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Admins deletion failed",
@@ -118,7 +112,6 @@ export const accountRouter = createTRPCRouter({
         await ctx.db.delete(accounts).where(eq(accounts.id, accountId));
         return true;
       } catch (e) {
-        console.log(e);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Account deletion failed",
@@ -151,15 +144,12 @@ export const accountRouter = createTRPCRouter({
       }
     }),
 
-  getRoles: accessedProcedure
-    .query(async ({ ctx }): Promise<Role[] | null> => {
+  getMembers: accessedProcedure
+    .query(async ({ ctx }): Promise<Member[] | null> => {
       const { accountId } = ctx;
 
       try {
-        const myRoles = await ctx.db.query.memberships.findMany({
-          columns: {
-            access: true,
-          },
+        const myMembers = await ctx.db.query.memberships.findMany({
           where: and(
             eq(memberships.accountId, accountId),
           ),
@@ -167,7 +157,7 @@ export const accountRouter = createTRPCRouter({
             user: true,
           }
         });
-        return myRoles;
+        return myMembers;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -209,5 +199,5 @@ export const accountRouter = createTRPCRouter({
         })
       }
     }),
-      
+
 });

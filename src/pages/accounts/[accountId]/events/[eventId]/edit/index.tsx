@@ -3,12 +3,9 @@ import { useRouter } from "next/router";
 import { useContext, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import HeadElement from "~/components/Head";
-import Header from "~/components/Header";
 import { Input } from "~/components/Input";
 import { InputNumber } from "~/components/InputNumber";
 import Label from "~/components/Label";
-import NoAccess from "~/components/NoAccess";
 import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
@@ -16,28 +13,25 @@ import { AccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 import { EventContext } from "~/context/event";
 import { parseDate } from "~/utils/date";
-import usePageLoader from "~/hooks/usePageLoader";
 import useEventId from "~/hooks/useEventId";
+import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 
 const EditEventPage: NextPage = () => {
+
   return (
-    <>
-      <HeadElement title="Edit Event - Moneyapp" description="Split the money" />
-      <Header />
-      <main>
-        <Page />
-      </main>
-    </>
-  );
+    <AccessedPage title="Member - Moneyapp" accessible="admin" >
+      <Page />
+    </AccessedPage>
+  )
 }
 
 export default EditEventPage;
 
 function Page() {
-  const { accountId, access } = usePageLoader();
+  const { accountId, access } = useContext(AccountContext);
   const { eventId } = useEventId();
 
-  if (!accountId || !eventId || !access) {
+  if (!eventId) {
     return (
       <div className="flex justify-center py-6">
         <Spinner />
@@ -45,16 +39,10 @@ function Page() {
     )
   }
 
-  if (access === "denied" || access === "viewer") {
-    return (
-      <NoAccess />
-    )
-  }
-
   return (
     <AccountContext.Provider value={{ accountId, access }}>
       <EventContext.Provider value={{ eventId }}>
-        <AdminContent />
+        <Content />
       </EventContext.Provider>
     </AccountContext.Provider>
   )
@@ -68,7 +56,7 @@ type EditEvent = {
   delivery: string
 }
 
-function AdminContent() {
+function Content() {
   const { accountId } = useContext(AccountContext);
   const { eventId } = useContext(EventContext);
   const { data: event } = api.event.get.useQuery({ accountId, eventId });
@@ -230,5 +218,3 @@ function AdminContent() {
     </>
   )
 }
-
-
