@@ -1,11 +1,10 @@
-import { useContext } from "react";
 import Card from "~/components/Card";
 import CardLink from "~/components/CardLink";
 import CardLoading from "~/components/CardLoading";
 import CardNoItem from "~/components/CardNoItem";
 import CardTitle from "~/components/CardTitle";
-import { AccountContext } from "~/context/account";
-import { EventContext } from "~/context/event";
+import { useAccountContext } from "~/context/account";
+import { useEventContext } from "~/context/event";
 import { api } from "~/utils/api";
 
 function PayemntList() {
@@ -23,8 +22,8 @@ function PayemntList() {
 export default PayemntList;
 
 function List() {
-  const { eventId } = useContext(EventContext);
-  const { accountId } = useContext(AccountContext);
+  const { accountId } = useAccountContext();
+  const { eventId } = useEventContext();;
   const { data: payments } = api.event.getPayments.useQuery({ eventId, accountId });
 
   if (!payments) {

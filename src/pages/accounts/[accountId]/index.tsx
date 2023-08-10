@@ -1,8 +1,7 @@
 import type { NextPage } from "next";
 import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
-import { useContext, useEffect, useState } from "react";
-import { AccountContext } from "~/context/account";
+import { useEffect, useState } from "react";
 import { api } from "~/utils/api";
 import AddButton from "~/components/AddButton";
 import EditButton from "~/components/EditButton";
@@ -14,6 +13,7 @@ import MemberList from "~/components/accounts/accountId/MemberList";
 import EventList from "~/components/accounts/accountId/EventList";
 import PayeeList from "~/components/accounts/accountId/PayeeList";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
+import { useAccountContext } from "~/context/account";
 
 const AccountPage: NextPage = () => {
   return (
@@ -29,7 +29,7 @@ function Content() {
   const router = useRouter();
   const { refetch } = router.query;
 
-  const { accountId, access } = useContext(AccountContext);
+  const { accountId, access } = useAccountContext();
 
   const { data: account, refetch: getAccount } = api.account.get.useQuery({ accountId });
   const { mutateAsync: deleteAccount } = api.account.delete.useMutation();

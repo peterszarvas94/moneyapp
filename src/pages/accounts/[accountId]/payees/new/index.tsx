@@ -2,7 +2,7 @@ import { TRPCClientError } from "@trpc/client";
 import { TRPCErrorShape } from "@trpc/server/rpc";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
@@ -13,7 +13,7 @@ import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
-import { AccountContext } from "~/context/account";
+import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 const NewPayeePage: NextPage = () => {
@@ -32,7 +32,7 @@ type NewPayee = {
 }
 
 function Content() {
-  const { accountId } = useContext(AccountContext);
+  const { accountId } = useAccountContext();
   const { data: account } = api.account.get.useQuery({ accountId });
   const router = useRouter();
   const { handleSubmit, control } = useForm<NewPayee>();

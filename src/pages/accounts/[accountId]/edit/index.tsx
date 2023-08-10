@@ -1,8 +1,8 @@
 import { toast } from "react-hot-toast";
 import { NextPage } from "next";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
-import { useContext, useState } from "react";
-import { AccountContext } from "~/context/account";
+import { useState } from "react";
+import { useAccountContext } from "~/context/account";
 import { useRouter } from "next/router";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { NewAccount } from "~/server/db/schema";
@@ -12,6 +12,7 @@ import SubmitButton from "~/components/SubmitButton";
 import { Input } from "~/components/Input";
 import Label from "~/components/Label";
 import PageTitle from "~/components/PageTitle";
+import BackButton from "~/components/BackButton";
 
 const EditAccountPage: NextPage = () => {
   return (
@@ -24,7 +25,7 @@ const EditAccountPage: NextPage = () => {
 export default EditAccountPage;
 
 function Content() {
-  const { accountId } = useContext(AccountContext);
+  const { accountId } = useAccountContext();
   const { data: account } = api.account.get.useQuery({ accountId });
   const router = useRouter();
   const { mutateAsync: editAccount } = api.account.update.useMutation();
@@ -60,6 +61,9 @@ function Content() {
   return (
     <>
       <PageTitle title="Edit Account" />
+      <div className="flex justify-center">
+        <BackButton text="Back to account" url={`/accounts/${accountId}`} />
+      </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col px-2">
         <Label htmlFor='name' text="Name" />

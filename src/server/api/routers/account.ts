@@ -97,13 +97,13 @@ export const accountRouter = createTRPCRouter({
         })
       }
 
-      // delete roles
+      // delete memberships
       try {
         await ctx.db.delete(memberships).where(eq(memberships.accountId, accountId));
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Admins deletion failed",
+          message: "Memberships deletion failed",
         })
       }
 

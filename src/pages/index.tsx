@@ -1,14 +1,14 @@
 import type { NextPage } from "next";
-import HeadElement from "~/components/Head";
 import PageTitle from "~/components/PageTitle";
-import Header from "~/components/Header";
+import HeadElement from "~/components/nav/HeadElement";
+import Header from "~/components/nav/Header";
 
 const Home: NextPage = () => {
   return (
     <>
       <HeadElement title="Moneyapp" description="Split the money" />
       <main>
-        <Header home={true} />
+        <Header page={"home"} />
         <PageTitle title='Moneyapp' />
         <p className='text-center'>Split the money</p>
       </main>

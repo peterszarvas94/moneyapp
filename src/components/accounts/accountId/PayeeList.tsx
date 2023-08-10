@@ -1,10 +1,9 @@
-import { useContext } from "react";
 import Card from "~/components/Card";
 import CardLink from "~/components/CardLink";
 import CardLoading from "~/components/CardLoading";
 import CardNoItem from "~/components/CardNoItem";
 import CardTitle from "~/components/CardTitle";
-import { AccountContext } from "~/context/account";
+import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function EventList() {
@@ -19,7 +18,7 @@ function EventList() {
 }
 
 function List() {
-  const { accountId } = useContext(AccountContext);
+  const { accountId } = useAccountContext();
   const { data: payees } = api.account.getPayees.useQuery({ accountId });
 
   if (!payees) {

@@ -94,14 +94,14 @@ export const accessedProcedure = loggedInProcedure
     const { accountId } = input;
 
     try {
-      const role = await ctx.db.query.memberships.findFirst({
+      const membership = await ctx.db.query.memberships.findFirst({
         where: and(
           eq(memberships.userId, userId),
           eq(memberships.accountId, accountId)
         )
       });
 
-      if (!role) {
+      if (!membership) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "No access found",
@@ -114,14 +114,14 @@ export const accessedProcedure = loggedInProcedure
           accountId,
           self: {
             ...ctx.self,
-            access: role.access
+            access: membership.access
           }
         },
       });
     } catch (e) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Role retrieval failed",
+        message: "Membership retrieval failed",
       })
     }
   });
@@ -164,15 +164,15 @@ export const userProcedure = adminProcedure
 
     if (user) {
       try {
-        const role = await ctx.db.query.memberships.findFirst({
+        const membership = await ctx.db.query.memberships.findFirst({
           where: and(
             eq(memberships.userId, user.id),
             eq(memberships.accountId, accountId)
           )
         })
 
-        if (role) {
-          access = role.access;
+        if (membership) {
+          access = membership.access;
         }
       } catch {
         throw new TRPCError({

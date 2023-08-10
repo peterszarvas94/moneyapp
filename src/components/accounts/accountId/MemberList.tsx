@@ -1,29 +1,29 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Card from "~/components/Card";
 import CardLink from "~/components/CardLink";
 import CardLoading from "~/components/CardLoading";
 import CardNoItem from "~/components/CardNoItem";
 import CardTitle from "~/components/CardTitle";
-import { AccountContext } from "~/context/account";
+import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 import { Member } from "~/utils/types";
 
 export default function MemberList() {
-  const { accountId } = useContext(AccountContext);
-  const { data: roles } = api.account.getMembers.useQuery({ accountId });
+  const { accountId } = useAccountContext();
+  const { data: members } = api.account.getMembers.useQuery({ accountId });
 
   const [admins, setAdmins] = useState<Member[] | null>(null);
   const [viewers, setViewers] = useState<Member[] | null>(null);
 
   useEffect(() => {
-    if (roles) {
-      const newAdmins = roles.filter(role => role.access === "admin")
+    if (members) {
+      const newAdmins = members.filter(member => member.access === "admin")
       setAdmins(newAdmins);
 
-      const newViewers = roles.filter(role => role.access === "viewer")
+      const newViewers = members.filter(member => member.access === "viewer")
       setViewers(newViewers);
     }
-  }, [roles]);
+  }, [members]);
 
   return (
     <>
@@ -49,7 +49,7 @@ interface Props {
 }
 
 function List({ nodata, members }: Props) {
-  const { accountId } = useContext(AccountContext);
+  const { accountId } = useAccountContext();
   const { data: self } = api.user.getSelf.useQuery();
 
   if (!members || !self) {

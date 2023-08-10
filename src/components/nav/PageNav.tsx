@@ -1,10 +1,9 @@
 import { UserButton } from "@clerk/nextjs";
 import NavLink from "./NavLink";
 
-function PageNav() {
+export default function PageNav() {
 	return (
 		<>
-			<NavLink url="/" text="Home" />
 			<NavLink url="/dashboard" text="Dashboard" />
 			<NavLink url="/accounts" text="Accounts" />
 			<li>
@@ -13,5 +12,3 @@ function PageNav() {
 		</>
 	)
 }
-
-export default PageNav;

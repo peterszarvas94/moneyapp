@@ -1,23 +1,24 @@
 import type { NextPage } from "next";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import { useRouter } from "next/router";
-import { useContext, useState } from "react";
-import { EventContext } from "~/context/event";
-import useEventId from "~/hooks/useEventId";
+import { useState } from "react";
+import { EventContext, useEventContext } from "~/context/event";
+import useIdParser from "~/hooks/useIdParser";
 import { api } from "~/utils/api";
 import EditButton from "~/components/EditButton";
 import DeleteButton from "~/components/DeleteButton";
 import toast from "react-hot-toast";
 import Spinner from "~/components/Spinner";
-import { AccountContext } from "~/context/account";
+import { useAccountContext } from "~/context/account";
 import PageTitle from "~/components/PageTitle";
 import EventDetails from "~/components/accounts/accountId/events/eventId/EventDetails";
 import PayemntList from "~/components/accounts/accountId/events/eventId/PaymentList";
+import BackButton from "~/components/BackButton";
 
 const EventPage: NextPage = () => {
 
   return (
-    <AccessedPage title="Member - Moneyapp" accessible="viewer" >
+    <AccessedPage title="Event - Moneyapp" accessible="viewer" >
       <Content />
     </AccessedPage>
   )
@@ -26,8 +27,7 @@ const EventPage: NextPage = () => {
 export default EventPage;
 
 function Content() {
-  const { eventId } = useEventId();
-
+  const { parsedId: eventId } = useIdParser("eventId");
   if (!eventId) {
     return (
       <div className="flex justify-center py-6">
@@ -35,7 +35,7 @@ function Content() {
       </div>
     )
   }
-  
+
   return (
     <EventContext.Provider value={{ eventId }}>
       <IdParsed />
@@ -45,14 +45,17 @@ function Content() {
 
 function IdParsed() {
   const router = useRouter();
-  const { eventId } = useContext(EventContext);
-  const { accountId, access } = useContext(AccountContext);
+  const { eventId } = useEventContext();
+  const { accountId, access } = useAccountContext();
   const { mutateAsync: deleteEvent } = api.event.delete.useMutation();
   const [deleting, setDeleting] = useState<boolean>(false);
 
   return (
     <>
       <PageTitle title={access === "admin" ? "Administrate Event" : "View Event"} />
+      <div className="flex justify-center">
+        <BackButton text="Back to account" url={`/accounts/${accountId}`} />
+      </div>
       <EventDetails />
 
       {access === "admin" && !deleting && (

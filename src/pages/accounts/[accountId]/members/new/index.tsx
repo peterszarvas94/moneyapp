@@ -3,9 +3,8 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { api } from "~/utils/api";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/router";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import Spinner from "~/components/Spinner";
-import { AccountContext } from "~/context/account";
 import PageTitle from "~/components/PageTitle";
 import { z } from "zod";
 import { TRPCClientError } from "@trpc/client";
@@ -15,6 +14,7 @@ import { Input } from "~/components/Input";
 import { Access } from "~/utils/types";
 import Select from "~/components/Select";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
+import { useAccountContext } from "~/context/account";
 
 const NewMemberPage: NextPage = () => {
   return (
@@ -32,7 +32,7 @@ type Form = {
 }
 function Content() {
   const router = useRouter();
-  const { accountId } = useContext(AccountContext);
+  const { accountId } = useAccountContext();
   const { handleSubmit, control } = useForm<Form>();
   const { mutateAsync: addViewer } = api.membership.addByEmail.useMutation();
   const [saving, setSaving] = useState<boolean>(false);

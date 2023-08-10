@@ -7,12 +7,12 @@ type Context = {
   isLoading: boolean;
 }
 
-export const RolesContext = createContext<Context | null>(null);
+export const MemberContext = createContext<Context | null>(null);
 
-export function useRolesContext() {
-  const context = useContext(RolesContext);
+export function useMemberContext() {
+  const context = useContext(MemberContext);
   if (context === null) {
-    throw new Error("useRoles must be used within a RolesContextProvider");
+    throw new Error("useMemberContext must be used within a MemberContextProvider");
   }
   
   const { admins, viewers, isLoading } = context;

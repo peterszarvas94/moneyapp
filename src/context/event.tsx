@@ -1,8 +1,20 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 
 type Context = {
   eventId: string;
 }
 
-const initialContext: Context = {} as Context;
-export const EventContext = createContext<Context>(initialContext);
+export const EventContext = createContext<Context | null>(null);
+
+export function useEventContext() {
+  const context = useContext(EventContext);
+  if (context === null) {
+    throw new Error("useEvent must be used within a EventContextProvider");
+  }
+
+  const { eventId } = context;
+
+  return {
+    eventId,
+  }
+}

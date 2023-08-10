@@ -1,9 +1,8 @@
-import { useContext } from "react";
 import Card from "~/components/Card";
 import CardLi from "~/components/CardLi";
 import CardLoading from "~/components/CardLoading";
 import CardTitle from "~/components/CardTitle";
-import { AccountContext } from "~/context/account";
+import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function AccountDetails() {
@@ -18,7 +17,7 @@ function AccountDetails() {
 }
 
 function Details() {
-  const { accountId } = useContext(AccountContext);
+  const { accountId } = useAccountContext();
   const { data: account } = api.account.get.useQuery({ accountId });
 
   if (!account) {

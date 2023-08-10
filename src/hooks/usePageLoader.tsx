@@ -1,24 +1,16 @@
-import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { api } from "~/utils/api";
 import { Access } from "~/utils/types";
+import useIdParser from "./useIdParser";
 
 function usePageLoader() {
-  const router = useRouter();
-  const { accountId } = router.query;
-  const [realId, setRealId] = useState<string | null>(null);
+  // 1. parse id
+  const { parsedId } = useIdParser("accountId");
 
+  // 2. check access
   const { mutateAsync: checkAccess, error } = api.account.checkAccess.useMutation();
   const [access, setAccess] = useState<Access | "denied" | null>(null);
 
-  // 1. get account id
-  useEffect(() => {
-    if (typeof accountId === "string") {
-      setRealId(accountId);
-    }
-  }, [accountId]);
-
-  // 2. check access
   useEffect(() => {
     async function check(accountId: string) {
       try {
@@ -29,10 +21,10 @@ function usePageLoader() {
       }
     }
 
-    if (realId) {
-      check(realId);
+    if (parsedId) {
+      check(parsedId);
     }
-  }, [realId]);
+  }, [parsedId]);
 
   // 3. check if unauth
   useEffect(() => {
@@ -42,7 +34,7 @@ function usePageLoader() {
   }, [error]);
 
   return {
-    accountId: realId,
+    accountId: parsedId,
     access,
   }
 }

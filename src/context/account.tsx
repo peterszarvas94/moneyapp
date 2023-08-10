@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 import { Access } from "~/utils/types";
 
 type Context = {
@@ -6,5 +6,18 @@ type Context = {
   access: Access;
 }
 
-const initialContext: Context = {} as Context;
-export const AccountContext = createContext<Context>(initialContext);
+export const AccountContext = createContext<Context | null>(null);
+
+export function useAccountContext() {
+  const context = useContext(AccountContext);
+  if (context === null) {
+    throw new Error("useAccount must be used within a AccountContextProvider");
+  }
+
+  const { accountId, access } = context;
+
+  return {
+    accountId,
+    access,
+  }
+}

@@ -1,7 +1,7 @@
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import NavLink from "./NavLink";
 
-function HomeNav() {
+export default function HomeNav() {
 	const { isSignedIn } = useAuth();
 
 	if (!isSignedIn) {
@@ -25,5 +25,3 @@ function HomeNav() {
 		</>
 	)
 }
-
-export default HomeNav;

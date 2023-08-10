@@ -31,7 +31,7 @@ export const membershipRouter = createTRPCRouter({
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Account search for role creation failed",
+          message: "Account search for membership creation failed",
         })
       }
     }),
@@ -53,7 +53,7 @@ export const membershipRouter = createTRPCRouter({
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Role deletion failed",
+          message: "Membership deletion failed",
         })
       }
     }),
@@ -98,7 +98,7 @@ export const membershipRouter = createTRPCRouter({
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Role creation failed",
+          message: "Membership creation failed",
         })
       }
     }),

@@ -1,6 +1,6 @@
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { Input } from "~/components/Input";
@@ -9,12 +9,13 @@ import Label from "~/components/Label";
 import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
-import { AccountContext } from "~/context/account";
+import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
-import { EventContext } from "~/context/event";
+import { EventContext, useEventContext } from "~/context/event";
 import { parseDate } from "~/utils/date";
-import useEventId from "~/hooks/useEventId";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
+import useIdParser from "~/hooks/useIdParser";
+import BackButton from "~/components/BackButton";
 
 const EditEventPage: NextPage = () => {
 
@@ -28,8 +29,7 @@ const EditEventPage: NextPage = () => {
 export default EditEventPage;
 
 function Page() {
-  const { accountId, access } = useContext(AccountContext);
-  const { eventId } = useEventId();
+  const { parsedId: eventId } = useIdParser("eventId");
 
   if (!eventId) {
     return (
@@ -40,11 +40,9 @@ function Page() {
   }
 
   return (
-    <AccountContext.Provider value={{ accountId, access }}>
-      <EventContext.Provider value={{ eventId }}>
-        <Content />
-      </EventContext.Provider>
-    </AccountContext.Provider>
+    <EventContext.Provider value={{ eventId }}>
+      <Content />
+    </EventContext.Provider>
   )
 }
 
@@ -57,8 +55,8 @@ type EditEvent = {
 }
 
 function Content() {
-  const { accountId } = useContext(AccountContext);
-  const { eventId } = useContext(EventContext);
+  const { accountId } = useAccountContext();
+  const { eventId } = useEventContext();
   const { data: event } = api.event.get.useQuery({ accountId, eventId });
   const { data: account } = api.account.get.useQuery({ accountId });
   const router = useRouter();
@@ -128,6 +126,9 @@ function Content() {
   return (
     <>
       <PageTitle title="Edit Event" />
+      <div className="flex justify-center">
+        <BackButton text="Back to event" url={`/accounts/${accountId}/events/${eventId}`} />
+      </div>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
         <Label htmlFor="name" text="Name" />
         <Controller

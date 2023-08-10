@@ -1,21 +1,18 @@
 import { NextPage } from "next";
-import HeadElement from "~/components/Head";
-import Header from "~/components/Header";
 import PageTitle from "~/components/PageTitle";
+import HeadElement from "~/components/nav/HeadElement";
+import Header from "~/components/nav/Header";
 
-const Dashboard: NextPage = () => {
+const DashboardPage: NextPage = () => {
   return (
     <>
       <HeadElement title="Dashboard - Moneyapp" description="Split the money" />
       <main>
-        <div>
-          <Header />
-          <PageTitle title="Dashboard" />
-          <p className='text-center'>There will be a summary</p>
-        </div>
+        <Header page={"dashboard"} />
+        <PageTitle title="Dashboard" />
       </main>
     </>
   )
 }
 
-export default Dashboard;
+export default DashboardPage;
