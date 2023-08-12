@@ -15,9 +15,12 @@ import { Access } from "~/utils/types";
 import Select from "~/components/Select";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import { useAccountContext } from "~/context/account";
+import { InputDisabled } from "~/components/InputDisabled";
+import useIdParser from "~/hooks/useIdParser";
+import { MemberContext, useMemberContext } from "~/context/member";
 import BackButton from "~/components/BackButton";
 
-const NewMemberPage: NextPage = () => {
+const EditMemberPage: NextPage = () => {
   return (
     <AccessedPage title="Member - Moneyapp" accessible="admin" >
       <Content />
@@ -25,45 +28,65 @@ const NewMemberPage: NextPage = () => {
   )
 }
 
-export default NewMemberPage;
+export default EditMemberPage;
+
+function Content() {
+  const { parsedId: membershipId } = useIdParser("memberId");
+
+  if (!membershipId) {
+    return (
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
+    )
+  }
+
+  return (
+    <MemberContext.Provider value={{ membershipId }}>
+      <IdParsed />
+    </MemberContext.Provider>
+  )
+}
 
 type Form = {
-  email: string;
-  access: Access;
+  access: Access
 }
-function Content() {
-  const router = useRouter();
+
+function IdParsed() {
   const { accountId } = useAccountContext();
+  const { membershipId } = useMemberContext();
+  const { data: member } = api.membership.get.useQuery({ accountId, membershipId });
+  const router = useRouter();
   const { handleSubmit, control } = useForm<Form>();
-  const { mutateAsync: addMember } = api.membership.addByEmail.useMutation();
+  const { mutateAsync: editMember } = api.membership.update.useMutation();
   const [saving, setSaving] = useState<boolean>(false);
+
+  if (!member) {
+    return (
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
+    )
+  }
 
   const onSubmit: SubmitHandler<Form> = async (data) => {
     setSaving(true);
-    const { email, access } = data;
+    const { access } = data;
 
     try {
-      z.string().email().parse(email);
-    } catch (error) {
-      toast.error("Invalid email");
-      setSaving(false);
-      return;
-    }
-
-    try {
-      await addMember({ accountId, email, access });
-      toast.success("Member added");
-      router.push(`/accounts/${accountId}`);
+      await editMember({ accountId, membershipId, access });
+      toast.success("Member updated");
+      router.push(`/accounts/${accountId}/members/${membershipId}`);
     } catch (error) {
       const trpcError = error as TRPCClientError<any>
       if (trpcError.data?.code === "NOT_FOUND") {
-        toast.error("User not found");
+        toast.error("Member not found");
         setSaving(false);
         return;
       }
 
       if (trpcError.data?.code === "CONFLICT") {
-        toast.error("User is already an admin or viewer");
+        toast.error("You can not update yourself");
         setSaving(false);
         return;
       }
@@ -81,26 +104,16 @@ function Content() {
 
   return (
     <>
-      <PageTitle title="Add New Member" />
+      <PageTitle title="Edit Member" />
       <div className="flex justify-center">
-        <BackButton text="Back to account" url={`/accounts/${accountId}`} />
+        <BackButton text="Back to member" url={`/accounts/${accountId}/members/${membershipId}`} />
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
         <Label htmlFor="email" text="Email" />
-        <Controller
-          control={control}
-          name="email"
-          rules={{ required: true }}
-          defaultValue=""
-          render={({ field }) => (
-            <Input
-              value={field.value}
-              setValue={field.onChange}
-              type="email"
-              required={true}
-            />
-          )}
+        <InputDisabled
+          value={member.user.email}
+          type="email"
         />
 
         <Label htmlFor="access" text="Access" />
@@ -108,7 +121,7 @@ function Content() {
           control={control}
           name="access"
           rules={{ required: true }}
-          defaultValue="viewer"
+          defaultValue={member.access}
           render={({ field }) => (
             <Select
               value={field.value}
@@ -127,7 +140,7 @@ function Content() {
             <Spinner />
           </div>
         ) : (
-          <SubmitButton text="Add" />
+          <SubmitButton text="Save" />
         )}
       </form>
     </>

@@ -12,6 +12,7 @@ import SubmitButton from "~/components/SubmitButton";
 import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
+import BackButton from "~/components/BackButton";
 
 const NewEventPage: NextPage = () => {
   return (
@@ -98,7 +99,11 @@ function Content() {
   return (
     <>
       <PageTitle title="Create New Event" />
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col px-2">
+      <div className="flex justify-center">
+        <BackButton text="Back to account" url={`/accounts/${accountId}`} />
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
         <Label htmlFor="name" text="Name" />
         <Controller
           control={control}

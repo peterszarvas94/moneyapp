@@ -129,6 +129,7 @@ function Content() {
       <div className="flex justify-center">
         <BackButton text="Back to event" url={`/accounts/${accountId}/events/${eventId}`} />
       </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
         <Label htmlFor="name" text="Name" />
         <Controller

@@ -9,8 +9,8 @@ Dev process:
 
 Todo:
 
-- [ ] add: member page
-- [ ] add: edit member page
+- [x] add: member page
+- [x] add: edit member page
 - [ ] add: payee page
 - [ ] add: edit payee page 
 - [ ] check: backlinks

@@ -65,7 +65,7 @@ function Content() {
         <BackButton text="Back to account" url={`/accounts/${accountId}`} />
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col px-2">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
         <Label htmlFor='name' text="Name" />
         <Controller
           control={control}

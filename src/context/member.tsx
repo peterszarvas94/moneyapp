@@ -1,10 +1,7 @@
 import { createContext, useContext } from "react";
-import { User } from "~/server/db/schema";
 
 type Context = {
-  admins: User[];
-  viewers: User[];
-  isLoading: boolean;
+  membershipId: string;
 }
 
 export const MemberContext = createContext<Context | null>(null);
@@ -15,11 +12,9 @@ export function useMemberContext() {
     throw new Error("useMemberContext must be used within a MemberContextProvider");
   }
   
-  const { admins, viewers, isLoading } = context;
+  const { membershipId } = context;
 
   return {
-    admins,
-    viewers,
-    isLoading,
+    membershipId,
   }
 }

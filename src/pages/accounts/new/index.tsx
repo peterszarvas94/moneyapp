@@ -4,21 +4,21 @@ import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { api } from "~/utils/api";
 import { useRouter } from "next/router";
-import HeadElement from "~/components/Head";
 import PageTitle from "~/components/PageTitle";
 import Label from "~/components/Label";
 import { Input } from "~/components/Input";
 import SubmitButton from "~/components/SubmitButton";
-import Header from "~/components/Header";
 import { useState } from "react";
 import Spinner from "~/components/Spinner";
+import BackButton from "~/components/BackButton";
+import Header from "~/components/nav/Header";
+import HeadElement from "~/components/nav/HeadElement";
 
 const NewAccountPage: NextPage = () => {
   return (
     <>
       <HeadElement title="New Account - Moneyapp" description="Split the money" />
       <Header />
-      <PageTitle title="Create New Account" />
       <main>
         <Page />
       </main>
@@ -47,64 +47,71 @@ function Page() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col px-2">
-      <Label htmlFor='name' text="Name" />
-      <Controller
-        control={control}
-        name="name"
-        rules={{ required: true }}
-        defaultValue=""
-        render={({ field }) => (
-          <Input
-            value={field.value}
-            setValue={field.onChange}
-            type="text"
-            required={true}
-          />
+    <>
+      <PageTitle title="Create New Account" />
+      <div className="flex justify-center">
+        <BackButton text="Back to accounts" url="/accounts" />
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
+        <Label htmlFor='name' text="Name" />
+        <Controller
+          control={control}
+          name="name"
+          rules={{ required: true }}
+          defaultValue=""
+          render={({ field }) => (
+            <Input
+              value={field.value}
+              setValue={field.onChange}
+              type="text"
+              required={true}
+            />
+          )}
+        />
+
+
+        <Label htmlFor='description' text="Description" />
+        <Controller
+          control={control}
+          name="description"
+          rules={{ required: false }}
+          defaultValue=""
+          render={({ field }) => (
+            <Input
+              value={field.value ?? ""}
+              setValue={field.onChange}
+              type="text"
+              required={false}
+            />
+          )}
+        />
+
+        <Label htmlFor='currency' text="Currency" />
+        <Controller
+          control={control}
+          name="currency"
+          rules={{ required: true }}
+          defaultValue=""
+          render={({ field }) => (
+            <Input
+              value={field.value}
+              setValue={field.onChange}
+              type="text"
+              required={true}
+            />
+          )}
+        />
+
+        {saving ? (
+          <div className="flex justify-center items-center py-6">
+            <Spinner />
+          </div>
+        ) : (
+          <SubmitButton text="Create Account" />
         )}
-      />
-
-
-      <Label htmlFor='description' text="Description" />
-      <Controller
-        control={control}
-        name="description"
-        rules={{ required: false }}
-        defaultValue=""
-        render={({ field }) => (
-          <Input
-            value={field.value ?? ""}
-            setValue={field.onChange}
-            type="text"
-            required={false}
-          />
-        )}
-      />
-
-      <Label htmlFor='currency' text="Currency" />
-      <Controller
-        control={control}
-        name="currency"
-        rules={{ required: true }}
-        defaultValue=""
-        render={({ field }) => (
-          <Input
-            value={field.value}
-            setValue={field.onChange}
-            type="text"
-            required={true}
-          />
-        )}
-      />
-
-      {saving ? (
-        <div className="flex justify-center items-center py-6">
-          <Spinner />
-        </div>
-      ) : (
-        <SubmitButton text="Create Account" />
-      )}
-    </form>
+      </form>
+    </>
   )
 }
 

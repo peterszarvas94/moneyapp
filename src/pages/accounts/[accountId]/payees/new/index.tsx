@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
+import BackButton from "~/components/BackButton";
 import { Input } from "~/components/Input";
 import { InputUser } from "~/components/InputUser";
 import Label from "~/components/Label";
@@ -91,7 +92,11 @@ function Content() {
   return (
     <>
       <PageTitle title="Create New Payee" />
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col px-2">
+      <div className="flex justify-center">
+        <BackButton text="Back to account" url={`/accounts/${accountId}`} />
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col py-4 px-2">
         <Label htmlFor="name" text="Name" />
         <Controller
           control={control}
