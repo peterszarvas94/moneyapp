@@ -1,5 +1,3 @@
-import { TRPCClientError } from "@trpc/client";
-import { TRPCErrorShape } from "@trpc/server/rpc";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useState } from "react";

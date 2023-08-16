@@ -80,25 +80,24 @@ export const userRouter = createTRPCRouter({
       }
     }),
 
-
-  getByClerkId: loggedInProcedure
-    .query(async ({ ctx }): Promise<User | null> => {
-      const { clerkId } = ctx;
-      try {
-        const user = await ctx.db.query.users.findFirst({
-          where: eq(users.clerkId, clerkId),
-        });
-        if (!user) {
-          return null;
-        }
-        return user;
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "User retrieval by clerkId failed",
-        })
-      }
-    }),
+  // getByClerkId: loggedInProcedure
+  //   .query(async ({ ctx }): Promise<User | null> => {
+  //     const { clerkId } = ctx;
+  //     try {
+  //       const user = await ctx.db.query.users.findFirst({
+  //         where: eq(users.clerkId, clerkId),
+  //       });
+  //       if (!user) {
+  //         return null;
+  //       }
+  //       return user;
+  //     } catch (e) {
+  //       throw new TRPCError({
+  //         code: "INTERNAL_SERVER_ERROR",
+  //         message: "User retrieval by clerkId failed",
+  //       })
+  //     }
+  //   }),
 
   getSelf: loggedInProcedure
     .query(async ({ ctx }): Promise<User | null> => {

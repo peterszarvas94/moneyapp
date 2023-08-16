@@ -132,13 +132,9 @@ export const eventRouter = createTRPCRouter({
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
       const { eventId } = input;
-      const { accountId } = ctx;
 
       try {
-        await ctx.db.delete(events).where(and(
-          eq(events.id, eventId),
-          eq(events.accountId, accountId),
-        ));
+        await ctx.db.delete(events).where(eq(events.id, eventId));
         return true;
       } catch (e) {
         throw new TRPCError({

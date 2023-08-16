@@ -139,7 +139,7 @@ export const payeeRelations = relations(payees, ({ one, many }) => ({
     references: [accounts.id],
   }),
   payments: many(payments),
-  membershipId: one(memberships, {
+  membership: one(memberships, {
     fields: [payees.membershipId],
     references: [memberships.id],
   }),
