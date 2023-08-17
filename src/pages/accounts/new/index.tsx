@@ -13,16 +13,15 @@ import Spinner from "~/components/Spinner";
 import BackButton from "~/components/BackButton";
 import Header from "~/components/nav/Header";
 import HeadElement from "~/components/nav/HeadElement";
+import { PageContext } from "~/context/page";
 
 const NewAccountPage: NextPage = () => {
   return (
-    <>
+    <PageContext.Provider value={{ page: "new-account" }}>
       <HeadElement title="New Account - Moneyapp" description="Split the money" />
       <Header />
-      <main>
-        <Page />
-      </main>
-    </>
+      <Page />
+    </PageContext.Provider>
   )
 }
 
@@ -47,7 +46,7 @@ function Page() {
   }
 
   return (
-    <>
+    <main>
       <PageTitle title="Create New Account" />
       <div className="flex justify-center">
         <BackButton text="Back to accounts" url="/accounts" />
@@ -111,7 +110,7 @@ function Page() {
           <SubmitButton text="Create Account" />
         )}
       </form>
-    </>
+    </main>
   )
 }
 

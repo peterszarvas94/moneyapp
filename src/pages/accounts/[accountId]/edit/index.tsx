@@ -13,12 +13,17 @@ import { Input } from "~/components/Input";
 import Label from "~/components/Label";
 import PageTitle from "~/components/PageTitle";
 import BackButton from "~/components/BackButton";
+import { PageContext } from "~/context/page";
+import Header from "~/components/nav/Header";
 
 const EditAccountPage: NextPage = () => {
   return (
-    <AccessedPage title="Account - Moneyapp" accessible="admin">
-      <Content />
-    </AccessedPage>
+    <PageContext.Provider value={{ page: "edit-account" }}>
+      <AccessedPage title="Account - Moneyapp" accessible="admin">
+        <Header />
+        <Content />
+      </AccessedPage>
+    </PageContext.Provider>
   )
 }
 

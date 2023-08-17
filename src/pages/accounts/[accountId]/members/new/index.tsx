@@ -16,12 +16,17 @@ import Select from "~/components/Select";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import { useAccountContext } from "~/context/account";
 import BackButton from "~/components/BackButton";
+import { PageContext } from "~/context/page";
+import Header from "~/components/nav/Header";
 
 const NewMemberPage: NextPage = () => {
   return (
-    <AccessedPage title="Member - Moneyapp" accessible="admin" >
-      <Content />
-    </AccessedPage>
+    <PageContext.Provider value={{ page: "new-member" }}>
+      <AccessedPage title="Member - Moneyapp" accessible="admin">
+        <Header />
+        <Content />
+      </AccessedPage>
+    </PageContext.Provider>
   )
 }
 
@@ -80,7 +85,7 @@ function Content() {
   }
 
   return (
-    <>
+    <main>
       <PageTitle title="Add New Member" />
       <div className="flex justify-center">
         <BackButton text="Back to account" url={`/accounts/${accountId}`} />
@@ -130,6 +135,6 @@ function Content() {
           <SubmitButton text="Add" />
         )}
       </form>
-    </>
+    </main>
   )
 }

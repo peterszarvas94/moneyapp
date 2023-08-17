@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 function Logo() {
-  return (
-    <Link
-			className="text-3xl text-white"
+	return (
+		<Link
+			className="text-2xl text-white h-8"
 			href="/"
 		>
-      M
-    </Link>
-  )
+			M
+		</Link>
+	)
 }
 
 export default Logo;

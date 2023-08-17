@@ -11,16 +11,20 @@ import EditButton from "~/components/EditButton";
 import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
+import Header from "~/components/nav/Header";
 import { useAccountContext } from "~/context/account";
 import { MemberContext, useMemberContext } from "~/context/member";
+import { PageContext } from "~/context/page";
 import useIdParser from "~/hooks/useIdParser";
 import { api } from "~/utils/api";
 
 const MemberPage: NextPage = () => {
   return (
-    <AccessedPage title="Member - Moneyapp" accessible="viewer" >
-      <Content />
-    </AccessedPage>
+    <PageContext.Provider value={{ page: "member" }}>
+      <AccessedPage title="Member - Moneyapp" accessible="viewer" >
+        <Content />
+      </AccessedPage>
+    </PageContext.Provider>
   )
 }
 
@@ -39,6 +43,7 @@ function Content() {
 
   return (
     <MemberContext.Provider value={{ membershipId }}>
+      <Header />
       <IdParsed />
     </MemberContext.Provider>
   )

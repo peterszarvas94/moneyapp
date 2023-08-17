@@ -1,39 +1,24 @@
-import type { Page } from "~/utils/types";
-import HomeNav from "./HomeNav";
 import Logo from "./Logo";
-import PageNav from "./PageNav";
-import DashboardNav from "./DashboradNav";
-import AccountsNav from "./AccountsNav";
+import { UserButton } from "@clerk/nextjs";
+import MenuButton from "./MenuButton";
+import { MenuProvider } from "~/context/menu";
+import Menu from "../Menu";
 
-interface Props {
-	page?: Page;
-}
-
-export default function Header({ page }: Props) {
+export default function Header() {
 	return (
-		<div className="flex justify-between p-4 bg-gray-600">
-			<Logo />
-			<nav className="flex items-center">
-				<ul className="flex gap-4 items-center">
-					<NavBar page={page} />
-				</ul>
-			</nav>
-		</div>
+		<MenuProvider>
+			<Menu />
+			<div className="flex justify-between items-center p-4 bg-gray-600">
+				<div className="flex justify-start items-center w-8">
+					<MenuButton />
+				</div>
+				<div className="flex justify-center items-center">
+					<Logo />
+				</div>
+				<div className="flex justify-end items-center w-8">
+					<UserButton />
+				</div>
+			</div>
+		</MenuProvider>
 	);
-}
-
-function NavBar({ page }: Props) {
-	if (page === "home") {
-		return <HomeNav />;
-	}
-
-	if (page === "dashboard") {
-		return <DashboardNav />;
-	}
-
-	if (page === "accounts") {
-		return <AccountsNav />;
-	}
-
-	return <PageNav />;
 }

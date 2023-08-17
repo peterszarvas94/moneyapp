@@ -14,12 +14,17 @@ import EventList from "~/components/accounts/accountId/EventList";
 import PayeeList from "~/components/accounts/accountId/PayeeList";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import { useAccountContext } from "~/context/account";
+import { PageContext } from "~/context/page";
+import Header from "~/components/nav/Header";
 
 const AccountPage: NextPage = () => {
   return (
-    <AccessedPage title="Account - Moneyapp" accessible="viewer">
-      <Content />
-    </AccessedPage>
+    <PageContext.Provider value={{ page: "account" }}>
+      <AccessedPage title="Account - Moneyapp" accessible="viewer">
+        <Header />
+        <Content />
+      </AccessedPage>
+    </PageContext.Provider>
   )
 }
 
@@ -51,7 +56,7 @@ function Content() {
   }
 
   return (
-    <>
+    <main>
       <PageTitle title={access === "admin" ? "Administrate account" : "View account"} />
 
       <AccountDetails />
@@ -112,6 +117,6 @@ function Content() {
           <AddButton url={`/accounts/${accountId}/payees/new`} text="New payee" />
         </div>
       )}
-    </>
+    </main>
   )
 }

@@ -6,11 +6,9 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import Spinner from "~/components/Spinner";
 import PageTitle from "~/components/PageTitle";
-import { z } from "zod";
 import { TRPCClientError } from "@trpc/client";
 import Label from "~/components/Label";
 import SubmitButton from "~/components/SubmitButton";
-import { Input } from "~/components/Input";
 import { Access } from "~/utils/types";
 import Select from "~/components/Select";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
@@ -19,12 +17,17 @@ import { InputDisabled } from "~/components/InputDisabled";
 import useIdParser from "~/hooks/useIdParser";
 import { MemberContext, useMemberContext } from "~/context/member";
 import BackButton from "~/components/BackButton";
+import { PageContext } from "~/context/page";
+import Header from "~/components/nav/Header";
 
 const EditMemberPage: NextPage = () => {
   return (
-    <AccessedPage title="Member - Moneyapp" accessible="admin" >
-      <Content />
-    </AccessedPage>
+    <PageContext.Provider value={{ page: "edit-member" }}>
+      <AccessedPage title="Member - Moneyapp" accessible="admin" >
+        <Header />
+        <Content />
+      </AccessedPage>
+    </PageContext.Provider>
   )
 }
 

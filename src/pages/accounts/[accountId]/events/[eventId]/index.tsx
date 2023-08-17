@@ -14,6 +14,7 @@ import PageTitle from "~/components/PageTitle";
 import EventDetails from "~/components/accounts/accountId/events/eventId/EventDetails";
 import PayemntList from "~/components/accounts/accountId/events/eventId/PaymentList";
 import BackButton from "~/components/BackButton";
+import AddButton from "~/components/AddButton";
 
 const EventPage: NextPage = () => {
 
@@ -93,6 +94,12 @@ function IdParsed() {
       )}
 
       <PayemntList />
+
+      {access === "admin" && (
+        <div className="flex justify-center py-4">
+          <AddButton url={`/accounts/${accountId}/payments/new?eventId=${eventId}`} text="Add Payment" />
+        </div>
+      )}
     </>
   )
 }

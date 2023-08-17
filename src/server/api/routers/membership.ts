@@ -1,16 +1,11 @@
-import type { Account, Membership } from "~/server/db/schema";
+import type { Membership } from "~/server/db/schema";
+import type { AccessWithAccount, Member } from "~/utils/types";
 import { memberships } from "~/server/db/schema";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { accessedProcedure, adminProcedure, createTRPCRouter, loggedInProcedure, userProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
-import { Access, Member } from "~/utils/types";
 import { nanoid } from "nanoid";
-
-type GetAccountType = {
-  access: Access;
-  account: Account;
-};
 
 export const membershipRouter = createTRPCRouter({
   get: accessedProcedure
@@ -46,11 +41,11 @@ export const membershipRouter = createTRPCRouter({
     }),
 
   getAccounts: loggedInProcedure
-    .query(async ({ ctx }): Promise<GetAccountType[] | null> => {
+    .query(async ({ ctx }): Promise<AccessWithAccount[] | null> => {
       const { id: userId } = ctx.self.user;
 
       try {
-        const accounts = await ctx.db.query.memberships.findMany({
+        const accessWithAccount = await ctx.db.query.memberships.findMany({
           columns: {
             access: true
           },
@@ -59,7 +54,7 @@ export const membershipRouter = createTRPCRouter({
             account: true,
           },
         }).execute();
-        return accounts;
+        return accessWithAccount;
       } catch (e) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

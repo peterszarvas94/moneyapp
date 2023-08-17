@@ -9,7 +9,7 @@ const AccountsPage: NextPage = () => {
   return (
     <>
       <HeadElement title="Accounts - Moneyapp" description="Split the money" />
-      <Header page={"accounts"}/>
+      <Header />
       <PageTitle title="Accounts" />
       <main>
         <div className="flex justify-center py-2">

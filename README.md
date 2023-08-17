@@ -9,8 +9,5 @@ Dev process:
 
 Todo:
 
-- [x] add: member page
-- [x] add: edit member page
-- [x] add: payee page
-- [x] add: edit payee page 
-- [x] check: backlinks
+- [x] add mobile-menu section to left
+- [ ] change account page to list events (with details)
