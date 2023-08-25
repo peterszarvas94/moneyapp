@@ -14,16 +14,20 @@ import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
+import Header from "~/components/nav/Header";
 import { useAccountContext } from "~/context/account";
+import { PageContext } from "~/context/page";
 import { PayeeContext, usePayeeContext } from "~/context/payee";
 import useIdParser from "~/hooks/useIdParser";
 import { api } from "~/utils/api";
 
 const NewPayeePage: NextPage = () => {
   return (
-    <AccessedPage title="Edit Payee - Moneyapp" accessible="admin" >
-      <Content />
-    </AccessedPage>
+    <PageContext.Provider value={{ page: "edit-payee" }}>
+      <AccessedPage title="Edit Payee - Moneyapp" accessible="admin" >
+        <Content />
+      </AccessedPage>
+    </PageContext.Provider>
   )
 }
 
@@ -42,6 +46,7 @@ function Content() {
 
   return (
     <PayeeContext.Provider value={{ payeeId }}>
+      <Header />
       <IdParsed />
     </PayeeContext.Provider>
   )

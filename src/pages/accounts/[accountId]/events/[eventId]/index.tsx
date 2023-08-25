@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import { useRouter } from "next/router";
 import { useState } from "react";
-import { EventContext, useEventContext } from "~/context/event";
+import { old_EventContext, old_useEventContext } from "~/context/event";
 import useIdParser from "~/hooks/useIdParser";
 import { api } from "~/utils/api";
 import EditButton from "~/components/EditButton";
@@ -15,13 +15,18 @@ import EventDetails from "~/components/accounts/accountId/events/eventId/EventDe
 import PayemntList from "~/components/accounts/accountId/events/eventId/PaymentList";
 import BackButton from "~/components/BackButton";
 import AddButton from "~/components/AddButton";
+import { PageContext } from "~/context/page";
+import Header from "~/components/nav/Header";
 
 const EventPage: NextPage = () => {
 
   return (
-    <AccessedPage title="Event - Moneyapp" accessible="viewer" >
-      <Content />
-    </AccessedPage>
+    <PageContext.Provider value={{ page: "event" }}>
+      <AccessedPage title="Event - Moneyapp" accessible="viewer" >
+        <Header />
+        <Content />
+      </AccessedPage>
+    </PageContext.Provider>
   )
 }
 
@@ -38,15 +43,15 @@ function Content() {
   }
 
   return (
-    <EventContext.Provider value={{ eventId }}>
+    <old_EventContext.Provider value={{ eventId }}>
       <IdParsed />
-    </EventContext.Provider>
+    </old_EventContext.Provider>
   )
 }
 
 function IdParsed() {
   const router = useRouter();
-  const { eventId } = useEventContext();
+  const { eventId } = old_useEventContext();
   const { accountId, access } = useAccountContext();
   const { mutateAsync: deleteEvent } = api.event.delete.useMutation();
   const [deleting, setDeleting] = useState<boolean>(false);

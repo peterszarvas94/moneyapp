@@ -9,7 +9,7 @@ type Context = {
 export const MenuContext = createContext<Context | null>(null);
 
 export function MenuProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   return (
     <MenuContext.Provider value={{ open, setOpen }}>

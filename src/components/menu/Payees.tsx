@@ -8,11 +8,11 @@ interface Props {
 	selected?: string;
 }
 
-export default function Members({ selected }: Props) {
+export default function Payees({ selected }: Props) {
 	const { accountId } = useAccountContext();
-	const { data: members } = api.account.getMembers.useQuery({ accountId });
+	const { data: payees } = api.account.getPayees.useQuery({ accountId });
 
-	if (!members) {
+	if (!payees) {
 		return (
 			<div className="flex h-10 px-4 py-2 justify-start items-center border border-gray-700 rounded-lg">
 				<Skeleton />
@@ -21,23 +21,23 @@ export default function Members({ selected }: Props) {
 	}
 
 	const items: DropDownItem[] = [];
-	members.forEach((member) => {
+	payees.forEach((payee) => {
 		items.push({
-			id: member.id,
-			url: `/accounts/${accountId}/members/${member.id}`,
-			text: `${member.user.name} (${member.access})`,
-			selected: member.id === selected,
+			id: payee.id,
+			url: `/accounts/${accountId}/payees/${payee.id}`,
+			text: payee.name,
+			selected: payee.id === selected,
 		})
 	})
 
 	items.push({
 		id: "new",
-		url: `/accounts/${accountId}/members/new`,
-		text: "New Member",
+		url: `/accounts/${accountId}/payees/new`,
+		text: "New Payee",
 		newItem: true,
 	})
 
 	return (
-		<DropDown title="Members" items={items} />
+		<DropDown title="Payees" items={items} />
 	)
 }

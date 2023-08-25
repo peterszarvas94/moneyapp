@@ -1,8 +1,8 @@
-import type { Access, Member } from "~/utils/types";
-import type { Account, User, Event, NewAccount, Payee, Membership } from "~/server/db/schema";
+import type { Access, EventWithPayments, Member } from "~/utils/types";
+import type { Account, Event, NewAccount, Payee } from "~/server/db/schema";
 import { z } from "zod";
-import { accessedProcedure, adminProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
-import { accounts, events, payees, memberships } from "~/server/db/schema";
+import { accessedProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
+import { accounts, events, payees, memberships, payments } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -57,13 +57,21 @@ export const accountRouter = createTRPCRouter({
       return accountId;
     }),
 
-  update: adminProcedure
+  update: accessedProcedure
     .input(z.object({
       name: z.string(),
       description: z.string(),
       currency: z.string()
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { access } = ctx.self;
+      if (access !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only admins can update accounts",
+        })
+      }
+
       const { accountId } = ctx;
       const { name, description, currency } = input;
 
@@ -83,8 +91,16 @@ export const accountRouter = createTRPCRouter({
       }
     }),
 
-  delete: adminProcedure
+  delete: accessedProcedure
     .mutation(async ({ ctx }): Promise<true> => {
+      const { access } = ctx.self;
+      if (access !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only admins can delete accounts",
+        })
+      }
+
       const { accountId } = ctx;
 
       // delete events
@@ -199,5 +215,4 @@ export const accountRouter = createTRPCRouter({
         })
       }
     }),
-
 });

@@ -10,4 +10,5 @@ Dev process:
 Todo:
 
 - [x] add mobile-menu section to left
+- [x] add payyees to menu
 - [ ] change account page to list events (with details)

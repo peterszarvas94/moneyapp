@@ -1,4 +1,4 @@
-import { Account, Membership, Payee, User } from "~/server/db/schema";
+import { Account, Membership, Payee, Payment, User, Event } from "~/server/db/schema";
 
 export type Access = "admin" | "viewer";
 
@@ -6,7 +6,7 @@ export type Member = Membership & {
   user: User
 }
 
-export type Page = "home" | "dashboard" | "accounts" | "account" | "new-account" | "edit-account" | "member" | "new-member" | "edit-member";
+export type Page = "home" | "dashboard" | "account" | "new-account" | "edit-account" | "member" | "new-member" | "edit-member" | "new-payee" | "payee" | "edit-payee" | "new-event" | "event" | "edit-event" | "new-payment" | "payment" | "edit-payment";
 
 export type PayeeWithMember = {
   payee: Payee,
@@ -24,4 +24,8 @@ export type DropDownItem = {
   text: string,
   newItem?: boolean,
   selected?: boolean,
+}
+
+export type PaymentWithPayee = Payment & {
+  payee: Payee,
 }

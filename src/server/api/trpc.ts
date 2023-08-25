@@ -4,8 +4,9 @@ import { TRPCError, initTRPC } from "@trpc/server";
 import { ZodError, z } from "zod";
 import { db } from "~/server/db/db";
 import { getAuth } from "@clerk/nextjs/server";
-import { User, memberships, users } from "../db/schema";
+import { Payment, User, Event, events, memberships, payments, users } from "../db/schema";
 import { and, eq } from "drizzle-orm";
+import { EventWithPayments } from "~/utils/types";
 
 // context:
 export const createTRPCContext = (opts: CreateNextContextOptions) => {
@@ -124,71 +125,4 @@ export const accessedProcedure = loggedInProcedure
         message: "Membership retrieval failed",
       })
     }
-  });
-
-export const adminProcedure = accessedProcedure
-  .use(async ({ ctx, next }) => {
-    const { access } = ctx.self;
-    if (access !== "admin") {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "No admin access found",
-      });
-    }
-
-    return next();
-  });
-
-export const userProcedure = adminProcedure
-  .input(z.object({
-    email: z.string().email()
-  }))
-  .use(async ({ input, ctx, next }) => {
-    const { email } = input;
-
-    let user: User | undefined = undefined;
-    try {
-      user = await ctx.db.query.users.findFirst({
-        where: eq(users.email, email)
-      });
-
-    } catch (e) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "User retrieval failed",
-      })
-    }
-
-    let access: "admin" | "viewer" | "denied" = "denied";
-    const { accountId } = ctx;
-
-    if (user) {
-      try {
-        const membership = await ctx.db.query.memberships.findFirst({
-          where: and(
-            eq(memberships.userId, user.id),
-            eq(memberships.accountId, accountId)
-          )
-        })
-
-        if (membership) {
-          access = membership.access;
-        }
-      } catch {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Access retrieval failed"
-        })
-      }
-    }
-
-    return next({
-      ctx: {
-        ...ctx,
-        check: {
-          access,
-          user: user || null,
-        },
-      },
-    })
   });

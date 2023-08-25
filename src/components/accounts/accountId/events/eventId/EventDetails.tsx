@@ -3,7 +3,7 @@ import CardLi from "~/components/CardLi";
 import CardLoading from "~/components/CardLoading";
 import CardTitle from "~/components/CardTitle";
 import { useAccountContext } from "~/context/account";
-import { useEventContext } from "~/context/event";
+import { old_useEventContext } from "~/context/event";
 import { api } from "~/utils/api";
 import { parseDate } from "~/utils/date";
 
@@ -21,7 +21,7 @@ function EventDetails() {
 function Details() {
 
   const { accountId } = useAccountContext();
-  const { eventId } = useEventContext();
+  const { eventId } = old_useEventContext();
   const { data: event } = api.event.get.useQuery({ accountId, eventId });
 
   if (!event) {

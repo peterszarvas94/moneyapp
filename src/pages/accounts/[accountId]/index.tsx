@@ -9,9 +9,7 @@ import DeleteButton from "~/components/DeleteButton";
 import { useRouter } from "next/router";
 import { toast } from "react-hot-toast";
 import AccountDetails from "~/components/accounts/accountId/AccountDetails";
-import MemberList from "~/components/accounts/accountId/MemberList";
 import EventList from "~/components/accounts/accountId/EventList";
-import PayeeList from "~/components/accounts/accountId/PayeeList";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import { useAccountContext } from "~/context/account";
 import { PageContext } from "~/context/page";
@@ -58,7 +56,7 @@ function Content() {
   return (
     <main>
       <PageTitle title={access === "admin" ? "Administrate account" : "View account"} />
-
+      {/*
       <AccountDetails />
       {access === "admin" && !deleting && (
         <>
@@ -92,31 +90,9 @@ function Content() {
           <Spinner />
         </div>
       )}
-
-      <MemberList />
-
-      {access === "admin" && (
-        <div className="pt-4 flex justify-center">
-          <AddButton url={`/accounts/${accountId}/members/new`} text="New member" />
-        </div>
-      )}
-
+      */}
 
       <EventList />
-
-      {access === "admin" && (
-        <div className="pt-4 flex justify-center">
-          <AddButton url={`/accounts/${accountId}/events/new`} text="New event" />
-        </div>
-      )}
-
-      <PayeeList />
-
-      {access === "admin" && (
-        <div className="py-4 flex justify-center">
-          <AddButton url={`/accounts/${accountId}/payees/new`} text="New payee" />
-        </div>
-      )}
     </main>
   )
 }

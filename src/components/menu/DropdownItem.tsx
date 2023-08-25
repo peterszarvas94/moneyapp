@@ -7,10 +7,13 @@ interface Props {
 	text: string;
 	newItem?: boolean;
 	selected?: boolean;
+	last?: boolean;
 }
 
-export default function AccountItem({ url, text, newItem, selected }: Props) {
+export default function DropdownItem({ url, text, newItem, selected, last }: Props) {
 	const { setOpen } = useMenuContext();
+	const lastClass = last ? "rounded-b-inner" : "";
+	const selectedClass = selected ? "bg-gray-800 text-white" : "hover:bg-gray-700";
 
 	return (
 		<li>
@@ -21,7 +24,7 @@ export default function AccountItem({ url, text, newItem, selected }: Props) {
 
 				<Link
 					href={url}
-					className={`block px-4 py-2 border-t border-gray-700 ${selected ? "bg-gray-700" : "hover:bg-gray-700"}`}
+					className={`block px-4 py-2 border-t border-gray-700 ${lastClass} ${selectedClass}`}
 				>
 					{newItem ? (
 						<div className="flex items-center gap-1">

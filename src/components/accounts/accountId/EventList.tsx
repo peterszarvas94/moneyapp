@@ -1,48 +1,51 @@
-import Card from "~/components/Card";
-import CardLink from "~/components/CardLink";
-import CardLoading from "~/components/CardLoading";
-import CardNoItem from "~/components/CardNoItem";
-import CardTitle from "~/components/CardTitle";
+import Event from "~/components/accounts/accountId/Event";
+import AddButton from "~/components/AddButton";
+import Spinner from "~/components/Spinner";
 import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 
 function EventList() {
   return (
     <div className="px-4 pt-4">
-      <Card>
-        <CardTitle title="Events" />
-        <List />
-      </Card>
+      <List />
     </div>
   )
 }
 
 function List() {
-  const { accountId } = useAccountContext();
+  const { accountId, access } = useAccountContext();
   const { data: events } = api.account.getEvents.useQuery({ accountId });
 
   if (!events) {
     return (
-      <CardLoading />
+      <div className="flex justify-center py-6">
+        <Spinner />
+      </div>
     )
   }
 
   if (events.length === 0) {
     return (
-      <CardNoItem>No events</CardNoItem>
+      <div>No events</div>
     )
   }
 
   return (
-    <ul>
-      {events.map((event) => (
-        <CardLink
-          key={event.id}
-          url={`/accounts/${accountId}/events/${event.id}`}
-          text={event.name}
-        />
-      ))}
-    </ul>
+    <>
+      <ul>
+        {events.map((event) => (
+          <Event
+            key={event.id}
+            eventId={event.id}
+          />
+        ))}
+      </ul>
+      {access === "admin" && (
+        <div className="pt-4 flex justify-center">
+          <AddButton url={`/accounts/${accountId}/events/new`} text="New event" />
+        </div>
+      )}
+    </>
   )
 }
 

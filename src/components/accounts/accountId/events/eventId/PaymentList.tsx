@@ -4,7 +4,7 @@ import CardLoading from "~/components/CardLoading";
 import CardNoItem from "~/components/CardNoItem";
 import CardTitle from "~/components/CardTitle";
 import { useAccountContext } from "~/context/account";
-import { useEventContext } from "~/context/event";
+import { old_useEventContext } from "~/context/event";
 import { api } from "~/utils/api";
 
 function PayemntList() {
@@ -23,16 +23,16 @@ export default PayemntList;
 
 function List() {
   const { accountId } = useAccountContext();
-  const { eventId } = useEventContext();;
-  const { data: payments } = api.event.getPayments.useQuery({ eventId, accountId });
+  const { eventId } = old_useEventContext();;
+  const { data: event } = api.event.getWithPayments.useQuery({ eventId, accountId });
 
-  if (!payments) {
+  if (!event) {
     return (
       <CardLoading />
     )
   }
 
-  if (payments.length === 0) {
+  if (event.payments.length === 0) {
     return (
       <CardNoItem>No payments</CardNoItem>
     )
@@ -40,7 +40,7 @@ function List() {
 
   return (
     <ul>
-      {payments.map(payment => (
+      {event.payments.map(payment => (
         <CardLink
           key={payment.id}
           url={`/account/${accountId}/payments/${payment.id}`}

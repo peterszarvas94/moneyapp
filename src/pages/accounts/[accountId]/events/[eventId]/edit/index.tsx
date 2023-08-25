@@ -11,7 +11,7 @@ import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
 import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
-import { EventContext, useEventContext } from "~/context/event";
+import { old_EventContext, old_useEventContext } from "~/context/event";
 import { parseDate } from "~/utils/date";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import useIdParser from "~/hooks/useIdParser";
@@ -40,9 +40,9 @@ function Page() {
   }
 
   return (
-    <EventContext.Provider value={{ eventId }}>
+    <old_EventContext.Provider value={{ eventId }}>
       <Content />
-    </EventContext.Provider>
+    </old_EventContext.Provider>
   )
 }
 
@@ -56,7 +56,7 @@ type EditEvent = {
 
 function Content() {
   const { accountId } = useAccountContext();
-  const { eventId } = useEventContext();
+  const { eventId } = old_useEventContext();
   const { data: event } = api.event.get.useQuery({ accountId, eventId });
   const { data: account } = api.account.get.useQuery({ accountId });
   const router = useRouter();

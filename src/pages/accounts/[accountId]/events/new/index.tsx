@@ -16,7 +16,7 @@ import BackButton from "~/components/BackButton";
 
 const NewEventPage: NextPage = () => {
   return (
-    <AccessedPage title="Member - Moneyapp" accessible="admin" >
+    <AccessedPage title="New event - Moneyapp" accessible="admin" >
       <Content />
     </AccessedPage>
   )

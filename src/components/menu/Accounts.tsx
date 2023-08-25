@@ -12,7 +12,7 @@ export default function Accounts({ selected }: Props) {
 
 	if (!accessWithAccount) {
 		return (
-			<div className="flex h-10 px-4 py-2 justify-start items-center">
+			<div className="flex h-10 px-4 py-2 justify-start items-center border border-gray-700 rounded-lg">
 				<Skeleton />
 			</div>
 		)

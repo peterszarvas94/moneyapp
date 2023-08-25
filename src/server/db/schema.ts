@@ -74,7 +74,6 @@ export const events = mysqlTable('events', {
   name: text('name').notNull(),
   description: text('description'),
   income: int('income').notNull(),
-  saving: int('saving').notNull(),
   delivery: datetime('delivery').notNull(),
   accountId: varchar('account_id', { length: 21 }).notNull(),
   createdAt: datetime('created_at').notNull(),
@@ -95,9 +94,12 @@ export const eventRelations = relations(events, ({ one, many }) => ({
 // payment
 export const payments = mysqlTable('payments', {
   id: varchar('id', { length: 21 }).primaryKey().notNull(),
+  factor: int('factor').notNull(),
+  extra: int('extra').notNull(),
   eventId: varchar('event_id', { length: 21 }).notNull(),
   accountId: varchar('account_id', { length: 21 }).notNull(),
   payeeId: varchar('payee_id', { length: 21 }).notNull(),
+  //TODO: add transactionId and calculate
   createdAt: datetime('created_at').notNull(),
   updatedAt: datetime('updated_at').notNull(),
 })

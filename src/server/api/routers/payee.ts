@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { accessedProcedure, adminProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { accessedProcedure, createTRPCRouter } from "~/server/api/trpc";
 import { Membership, Payee, User, memberships, payees, users } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
@@ -7,12 +7,20 @@ import { eq, and } from "drizzle-orm";
 import { Member, PayeeWithMember } from "~/utils/types";
 
 export const payeeRouter = createTRPCRouter({
-  new: adminProcedure
+  new: accessedProcedure
     .input(z.object({
       name: z.string(),
       email: z.string().email().optional(),
     }))
     .mutation(async ({ input, ctx }): Promise<string> => {
+      const { access } = ctx.self;
+      if (access !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only admins can create payees",
+        })
+      }
+
       const { name, email } = input;
       const { accountId } = ctx;
 
@@ -162,11 +170,19 @@ export const payeeRouter = createTRPCRouter({
       }
     }),
 
-  delete: adminProcedure
+  delete: accessedProcedure
     .input(z.object({
       payeeId: z.string(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { access } = ctx.self;
+      if (access !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only admins can delete payees",
+        })
+      }
+
       const { payeeId } = input;
 
       try {
@@ -180,13 +196,21 @@ export const payeeRouter = createTRPCRouter({
       }
     }),
 
-  update: adminProcedure
+  update: accessedProcedure
     .input(z.object({
       payeeId: z.string(),
       name: z.string(),
       email: z.string().email().optional(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { access } = ctx.self;
+      if (access !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only admins can update payees",
+        })
+      }
+
       const { payeeId, name, email } = input;
       const { accountId } = ctx;
 

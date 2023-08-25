@@ -14,14 +14,19 @@ import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import SubmitButton from "~/components/SubmitButton";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
+import Header from "~/components/nav/Header";
 import { useAccountContext } from "~/context/account";
+import { PageContext } from "~/context/page";
 import { api } from "~/utils/api";
 
 const NewPayeePage: NextPage = () => {
   return (
-    <AccessedPage title="New Payee - Moneyapp" accessible="admin" >
-      <Content />
-    </AccessedPage>
+    <PageContext.Provider value={{ page: "new-payee" }}>
+      <AccessedPage title="New Payee - Moneyapp" accessible="admin" >
+        <Header />
+        <Content />
+      </AccessedPage>
+    </PageContext.Provider>
   )
 }
 

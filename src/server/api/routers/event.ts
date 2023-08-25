@@ -1,10 +1,11 @@
-import type { Payment, Event, NewEvent } from "~/server/db/schema";
+import type { Event, NewEvent } from "~/server/db/schema";
 import { z } from "zod";
-import { accessedProcedure, adminProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { accessedProcedure, createTRPCRouter } from "~/server/api/trpc";
 import { events, payments } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { PaymentWithPayee } from "~/utils/types";
 
 export const eventRouter = createTRPCRouter({
   get: accessedProcedure
@@ -40,7 +41,7 @@ export const eventRouter = createTRPCRouter({
       return event;
     }),
 
-  new: adminProcedure
+  new: accessedProcedure
     .input(z.object({
       name: z.string(),
       description: z.string().optional().nullable(),
@@ -49,6 +50,14 @@ export const eventRouter = createTRPCRouter({
       delivery: z.date(),
     }))
     .mutation(async ({ input, ctx }): Promise<string> => {
+      const { access } = ctx.self;
+      if (access !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only admins can create events",
+        })
+      }
+
       const id = nanoid();
       const { accountId } = ctx;
       const { name, description, income, saving, delivery } = input;
@@ -66,7 +75,6 @@ export const eventRouter = createTRPCRouter({
         name,
         description: description || null,
         income,
-        saving,
         delivery,
         accountId,
         createdAt: now,
@@ -84,7 +92,7 @@ export const eventRouter = createTRPCRouter({
       }
     }),
 
-  update: adminProcedure
+  update: accessedProcedure
     .input(z.object({
       eventId: z.string(),
       name: z.string(),
@@ -94,6 +102,14 @@ export const eventRouter = createTRPCRouter({
       saving: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { access } = ctx.self;
+      if (access !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only admins can update events",
+        })
+      }
+
       const { accountId } = ctx;
       const { name, description, income, saving, delivery, eventId } = input;
       const now = new Date();
@@ -111,7 +127,6 @@ export const eventRouter = createTRPCRouter({
           description: description || null,
           delivery,
           income,
-          saving,
           updatedAt: now,
         }).where(and(
           eq(events.id, eventId),
@@ -126,11 +141,19 @@ export const eventRouter = createTRPCRouter({
       }
     }),
 
-  delete: adminProcedure
+  delete: accessedProcedure
     .input(z.object({
       eventId: z.string()
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
+      const { access } = ctx.self;
+      if (access !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only admins can delete events",
+        })
+      }
+
       const { eventId } = input;
 
       try {
@@ -148,17 +171,20 @@ export const eventRouter = createTRPCRouter({
     .input(z.object({
       eventId: z.string()
     }))
-    .query(async ({ input, ctx }): Promise<Payment[]> => {
+    .query(async ({ input, ctx }): Promise<PaymentWithPayee[]> => {
       const { eventId } = input;
       const { accountId } = ctx;
 
-      let myPayments: Payment[] | undefined;
+      let myPayments: PaymentWithPayee[] | undefined;
       try {
         myPayments = await ctx.db.query.payments.findMany({
           where: and(
             eq(payments.eventId, eventId),
             eq(payments.accountId, accountId),
           ),
+          with: {
+            payee: true,
+          },
         });
       } catch (e) {
         throw new TRPCError({
@@ -167,6 +193,14 @@ export const eventRouter = createTRPCRouter({
         })
       }
 
+      if (!payments) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Payments not found",
+        })
+      }
+
       return myPayments;
     }),
+
 });
