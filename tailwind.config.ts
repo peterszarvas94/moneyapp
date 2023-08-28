@@ -7,6 +7,9 @@ export default {
       borderRadius: {
         "inner": "0.43rem",
       },
+      gridTemplateColumns: {
+        "payee": "auto 2rem auto auto auto",
+      },
     },
   },
   plugins: [],

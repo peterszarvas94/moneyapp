@@ -34,6 +34,10 @@ type Context = {
   setSaving: Dispatch<SetStateAction<number>>;
   portion: number;
   setPortion: Dispatch<SetStateAction<number>>;
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  editing: boolean;
+  setEditing: Dispatch<SetStateAction<boolean>>;
 }
 
 export const EventContext = createContext<Context | null>(null);
@@ -57,6 +61,8 @@ export function EventContextProvider({
   const [payments, setPayments] = useState<PaymentWithPayee[]>(initialPayments);
   const [saving, setSaving] = useState<number>(initialSavings);
   const [portion, setPortion] = useState<number>(initialPortion);
+  const [open, setOpen] = useState<boolean>(false);
+  const [editing, setEditing] = useState<boolean>(false);
 
   return (
     <EventContext.Provider value={{
@@ -68,6 +74,10 @@ export function EventContextProvider({
       setSaving,
       portion,
       setPortion,
+      open,
+      setOpen,
+      editing,
+      setEditing,
     }}>
       {children}
     </EventContext.Provider>
@@ -80,25 +90,5 @@ export function useEventContext() {
     throw new Error("useEventContext must be used within a EventContext.Provider");
   }
 
-  const {
-    event,
-    setEvent,
-    payments,
-    setPayments,
-    saving,
-    setSaving,
-    portion,
-    setPortion,
-  } = context;
-
-  return {
-    event,
-    setEvent,
-    payments,
-    setPayments,
-    saving,
-    setSaving,
-    portion,
-    setPortion,
-  }
+  return context;
 }

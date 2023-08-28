@@ -7,13 +7,13 @@ interface Props {
 export function InputMoney({ value, onChange, min }: Props) {
   return (
     <input
-      className="w-full border border-black rounded text-right"
+      className="w-full h-full border border-gray-400 rounded text-right"
       type="number"
       min={min ?? 0}
       max={9007199254740991}
       step={1}
       required={true}
-      value={value}
+      value={value ?? 0}
       onChange={(e) => {
         if (e.target.value === "") {
           onChange(null);
