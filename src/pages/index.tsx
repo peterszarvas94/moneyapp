@@ -16,7 +16,11 @@ const Home: NextPage = () => {
         <PageTitle title='Moneyapp' />
         <p className='text-center'>Split the money</p>
         <div className="flex justify-center py-6">
-          <ForwardButton url='/dashboard' text={isSignedIn ? "Dashboard" : "Log in"} />
+          {isSignedIn ? (
+            <ForwardButton url='/dashboard' text="Dashboard" />
+          ) : (
+            <ForwardButton url='/login' text="Log in" />
+          )}
         </div>
       </main>
     </PageContext.Provider>

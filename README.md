@@ -9,6 +9,7 @@ Dev process:
 
 Todo:
 
-- [x] add mobile-menu section to left
-- [x] add payyees to menu
-- [ ] change account page to list events (with details)
+- [ ] separate new event, edit event, and view event (admin / viewer also)
+- [ ] introduce saving event (new / edit)
+- [ ] introduce sacing payment (new / edit)
+- [ ] introduce changeing payye from list
