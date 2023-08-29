@@ -128,7 +128,7 @@ function IdParsed() {
         accountId,
         eventId,
         payeeId,
-        multiplier: parsedMutliplier,
+        factor: parsedMutliplier,
         extra: parsedExtra,
       })
 

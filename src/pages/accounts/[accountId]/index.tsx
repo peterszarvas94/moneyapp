@@ -3,7 +3,6 @@ import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
 import { useEffect, useState } from "react";
 import { api } from "~/utils/api";
-import AddButton from "~/components/AddButton";
 import EditButton from "~/components/EditButton";
 import DeleteButton from "~/components/DeleteButton";
 import { useRouter } from "next/router";
@@ -37,6 +36,9 @@ function Content() {
   const { data: account, refetch: getAccount } = api.account.get.useQuery({ accountId });
   const { mutateAsync: deleteAccount } = api.account.delete.useMutation();
 
+  //prefetch payees
+  api.account.getPayees.useQuery({ accountId });
+
   const [deleting, setDeleting] = useState<boolean>(false);
 
   useEffect(() => {
@@ -56,7 +58,6 @@ function Content() {
   return (
     <main>
       <PageTitle title={access === "admin" ? "Administrate account" : "View account"} />
-      {/*
       <AccountDetails />
       {access === "admin" && !deleting && (
         <>
@@ -90,7 +91,6 @@ function Content() {
           <Spinner />
         </div>
       )}
-      */}
 
       <EventList />
     </main>

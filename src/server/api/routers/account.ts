@@ -123,6 +123,26 @@ export const accountRouter = createTRPCRouter({
         })
       }
 
+      // delete payments
+      try {
+        await ctx.db.delete(payments).where(eq(payments.accountId, accountId));
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Payments deletion failed",
+        })
+      }
+
+      // delete payees
+      try {
+        await ctx.db.delete(payees).where(eq(payees.accountId, accountId));
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Payees deletion failed",
+        })
+      }
+
       // delete account
       try {
         await ctx.db.delete(accounts).where(eq(accounts.id, accountId));

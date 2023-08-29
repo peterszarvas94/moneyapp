@@ -5,7 +5,7 @@ export function calculateTotal(portion: number, factor: number, extra: number) {
 }
 
 export function calculatePortion(saving: number, payments: PaymentWithPayee[], income: number) {
-  const factor_sum = payments.reduce((acc, payment) => payment.factor + acc, 0);
+  const factor_sum = payments.reduce((acc, payment) => payment.factor + acc, 0) || 1;
   const extra_sum = payments.reduce((acc, payment) => payment.extra + acc, 0);
   const expense_sum = extra_sum + saving;
   const remaining = income - expense_sum;

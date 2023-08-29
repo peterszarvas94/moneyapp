@@ -9,12 +9,13 @@ import Link from "next/link";
 import { BiSolidDashboard } from "react-icons/bi";
 import { api } from "~/utils/api";
 import { useAccountContext } from "~/context/account";
+import { useAuth } from "@clerk/nextjs";
 
 export default function Menu() {
 	// prefetch
-	api.membership.getAccounts.useQuery();
 	try {
 		const { accountId } = useAccountContext();
+		api.membership.getAccounts.useQuery();
 		api.account.getMembers.useQuery({ accountId });
 		api.account.getPayees.useQuery({ accountId });
 	} catch (error) {
@@ -58,6 +59,10 @@ export default function Menu() {
 
 function Elements() {
 	const { page } = usePageContext();
+	const { isSignedIn } = useAuth();
+	if (!isSignedIn) {
+		return null;
+	}
 
 	if (page === "home" || page === "dashboard" || page === "new-account") {
 		return <Accounts />;

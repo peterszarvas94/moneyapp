@@ -1,6 +1,7 @@
 import { useAuth } from "@clerk/nextjs";
 import type { NextPage } from "next";
 import ForwardButton from "~/components/ForwardButton";
+import LoginButton from "~/components/LoginButton";
 import PageTitle from "~/components/PageTitle";
 import HeadElement from "~/components/nav/HeadElement";
 import Header from "~/components/nav/Header";
@@ -19,7 +20,7 @@ const Home: NextPage = () => {
           {isSignedIn ? (
             <ForwardButton url='/dashboard' text="Dashboard" />
           ) : (
-            <ForwardButton url='/login' text="Log in" />
+            <LoginButton />
           )}
         </div>
       </main>

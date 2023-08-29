@@ -28,14 +28,31 @@ export function old_useEventContext() {
 type Context = {
   event: Event;
   setEvent: Dispatch<SetStateAction<Event>>;
+
+  initialEvent: Event;
+  setInitialEvent: Dispatch<SetStateAction<Event>>;
+
   payments: PaymentWithPayee[];
   setPayments: Dispatch<SetStateAction<PaymentWithPayee[]>>;
+
+  initialPayments: PaymentWithPayee[];
+  setInitialPayments: Dispatch<SetStateAction<PaymentWithPayee[]>>;
+
   saving: number;
   setSaving: Dispatch<SetStateAction<number>>;
+
+  initialSaving: number;
+  setInitialSaving: Dispatch<SetStateAction<number>>;
+
   portion: number;
   setPortion: Dispatch<SetStateAction<number>>;
+
+  initialPortion: number;
+  setInitialPortion: Dispatch<SetStateAction<number>>;
+
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
+
   editing: boolean;
   setEditing: Dispatch<SetStateAction<boolean>>;
 }
@@ -51,16 +68,24 @@ interface Props {
 }
 
 export function EventContextProvider({
-  event: initialEvent,
-  payments: initialPayments,
-  saving: initialSavings,
-  portion: initialPortion,
+  event: propEvent,
+  payments: propPayments,
+  saving: propSaving,
+  portion: propPortion,
   children
 }: Props) {
-  const [event, setEvent] = useState<Event>(initialEvent);
-  const [payments, setPayments] = useState<PaymentWithPayee[]>(initialPayments);
-  const [saving, setSaving] = useState<number>(initialSavings);
-  const [portion, setPortion] = useState<number>(initialPortion);
+  const [event, setEvent] = useState<Event>(propEvent);
+  const [initialEvent, setInitialEvent] = useState<Event>(propEvent);
+
+  const [payments, setPayments] = useState<PaymentWithPayee[]>(propPayments);
+  const [initialPayments, setInitialPayments] = useState<PaymentWithPayee[]>(propPayments);
+
+  const [saving, setSaving] = useState<number>(propSaving);
+  const [initialSaving, setInitialSaving] = useState<number>(propSaving);
+
+  const [portion, setPortion] = useState<number>(propPortion);
+  const [initialPortion, setInitialPortion] = useState<number>(propPortion);
+
   const [open, setOpen] = useState<boolean>(false);
   const [editing, setEditing] = useState<boolean>(false);
 
@@ -68,14 +93,31 @@ export function EventContextProvider({
     <EventContext.Provider value={{
       event,
       setEvent,
+
+      initialEvent,
+      setInitialEvent,
+
       payments,
       setPayments,
+
+      initialPayments,
+      setInitialPayments,
+
       saving,
       setSaving,
+
+      initialSaving,
+      setInitialSaving,
+
       portion,
       setPortion,
+
+      initialPortion,
+      setInitialPortion,
+
       open,
       setOpen,
+
       editing,
       setEditing,
     }}>
