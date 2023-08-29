@@ -10,7 +10,7 @@ Dev process:
 Todo:
 
 - [ ] separate new event, edit event, and view event (admin / viewer also)
-    - [ ] new event
+    - [x] new event
     - [x] edit event
     - [x] view event
     - [ ] delete event
@@ -19,3 +19,4 @@ Todo:
 - [x] introduce changeing payye from list
 - [ ] add new payment to event
 - [ ] delete payment from event
+- [ ] add spinners

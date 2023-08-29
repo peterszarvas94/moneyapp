@@ -64,6 +64,7 @@ interface Props {
   payments: PaymentWithPayee[];
   saving: number;
   portion: number;
+  editing?: boolean;
   children: ReactNode;
 }
 
@@ -72,6 +73,7 @@ export function EventContextProvider({
   payments: propPayments,
   saving: propSaving,
   portion: propPortion,
+  editing: propEditing,
   children
 }: Props) {
   const [event, setEvent] = useState<Event>(propEvent);
@@ -87,7 +89,7 @@ export function EventContextProvider({
   const [initialPortion, setInitialPortion] = useState<number>(propPortion);
 
   const [open, setOpen] = useState<boolean>(false);
-  const [editing, setEditing] = useState<boolean>(false);
+  const [editing, setEditing] = useState<boolean>(propEditing ?? false);
 
   return (
     <EventContext.Provider value={{

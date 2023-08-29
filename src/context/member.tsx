@@ -9,12 +9,8 @@ export const MemberContext = createContext<Context | null>(null);
 export function useMemberContext() {
   const context = useContext(MemberContext);
   if (context === null) {
-    throw new Error("useMemberContext must be used within a MemberContextProvider");
+    throw new Error("useMemberContext must be used within a MemberContext.Provider");
   }
   
-  const { membershipId } = context;
-
-  return {
-    membershipId,
-  }
+  return context;
 }

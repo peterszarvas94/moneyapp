@@ -1,20 +1,26 @@
 import Event from "~/components/accounts/accountId/Event";
-import AddButton from "~/components/AddButton";
 import Spinner from "~/components/Spinner";
 import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
+import AddButton from "./AddButton";
+import NewEvent from "./NewEvent";
+import { EventListProvider, useEventListContext } from "~/context/eventlist";
 
 function EventList() {
+  const { accountId } = useAccountContext();
+
   return (
     <div className="px-4 pt-4">
-      <List />
+      <EventListProvider accountId={accountId}>
+        <Content />
+      </EventListProvider>
     </div>
   )
 }
 
-function List() {
-  const { accountId, access } = useAccountContext();
-  const { data: events } = api.account.getEvents.useQuery({ accountId });
+function Content() {
+  const { access } = useAccountContext();
+  const { adding, setAdding, events } = useEventListContext();
 
   if (!events) {
     return (
@@ -39,10 +45,15 @@ function List() {
             eventId={event.id}
           />
         ))}
+        {access === "admin" && adding && (
+          <NewEvent />
+        )}
       </ul>
-      {access === "admin" && (
+      {access === "admin" && !adding && (
         <div className="pt-4 flex justify-center">
-          <AddButton url={`/accounts/${accountId}/events/new`} text="New event" />
+          <AddButton
+            onClick={() => setAdding(true)}
+          />
         </div>
       )}
     </>

@@ -12,9 +12,5 @@ export function usePayeeContext() {
     throw new Error("usePayee must be used within a PayeeContextProvider");
   }
   
-  const { payeeId } = context;
-
-  return {
-    payeeId,
-  }
+  return context;
 }

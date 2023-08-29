@@ -21,13 +21,8 @@ export function MenuProvider({ children }: { children: ReactNode }) {
 export function useMenuContext() {
   const context = useContext(MenuContext);
   if (context === null) {
-    throw new Error("useMenuContext must be used within a MenuProvider");
+    throw new Error("useMenuContext must be used within a MenuContext.Provider");
   }
 
-  const { open, setOpen } = context;
-
-  return {
-    open,
-    setOpen,
-  }
+  return context;
 }

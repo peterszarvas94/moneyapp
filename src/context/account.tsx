@@ -14,10 +14,5 @@ export function useAccountContext() {
     throw new Error("useAccount must be used within a AccountContextProvider");
   }
 
-  const { accountId, access } = context;
-
-  return {
-    accountId,
-    access,
-  }
+  return context;
 }

@@ -1,10 +1,10 @@
-import type { Access, EventWithPayments, Member } from "~/utils/types";
+import type { Access, Member } from "~/utils/types";
 import type { Account, Event, NewAccount, Payee } from "~/server/db/schema";
 import { z } from "zod";
 import { accessedProcedure, createTRPCRouter, loggedInProcedure } from "~/server/api/trpc";
 import { accounts, events, payees, memberships, payments } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export const accountRouter = createTRPCRouter({
@@ -209,7 +209,8 @@ export const accountRouter = createTRPCRouter({
       try {
         const queriedEvents = await ctx.db.query.events.findMany({
           where: eq(events.accountId, accountId),
-        });
+          orderBy: [asc(events.delivery)],
+        })
         return queriedEvents;
       } catch (e) {
         throw new TRPCError({
