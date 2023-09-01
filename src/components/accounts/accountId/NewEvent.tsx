@@ -46,10 +46,36 @@ function Details() {
   const { mutateAsync: newEvent } = api.event.new.useMutation();
   const { mutateAsync: newPayment } = api.payment.new.useMutation();
   const { setAdding, getEvents } = useEventListContext();
-  const { event, payments, saving } = useEventContext();
+  const {
+    event,
+    setEvent,
+    initialEvent,
+
+    payments,
+    setPayments,
+    initialPayments,
+
+    saving,
+    setSaving,
+    initialSaving,
+
+    setPortion,
+    initialPortion,
+  } = useEventContext();
 
   return (
     <EventForm
+      onDelete={() => {
+        if(confirm("Are you sure you want to stop creating this event?")) {
+          setAdding(false);
+        }
+      }}
+      onReset={() => {
+        setEvent(initialEvent);
+        setPayments(initialPayments);
+        setSaving(initialSaving);
+        setPortion(initialPortion);
+      }}
       onSave={async () => {
         try {
           await newEvent({

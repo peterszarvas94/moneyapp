@@ -1,4 +1,4 @@
-import { AiFillEdit, AiFillSave, AiOutlineUndo } from "react-icons/ai";
+import { AiFillEdit, AiFillSave, AiOutlineUndo, AiFillDelete } from "react-icons/ai";
 import { MdArrowDropDown, MdArrowDropUp } from "react-icons/md";
 import { useAccountContext } from "~/context/account";
 import { InputNumber } from "./InputNumber";
@@ -7,10 +7,12 @@ import Payment from "./Payment";
 import { useEventContext } from "~/context/event";
 
 interface Props {
-  onSave: () => void
+  onSave: () => void,
+  onReset: () => void,
+  onDelete: () => void,
 }
 
-export default function EventForm({ onSave }: Props) {
+export default function EventForm({ onSave, onReset, onDelete }: Props) {
   const { access } = useAccountContext();
   const isAdmin = access === "admin";
 
@@ -18,22 +20,13 @@ export default function EventForm({ onSave }: Props) {
     event,
     setEvent,
 
-    initialEvent,
-
     payments,
-    setPayments,
-
-    initialPayments,
 
     saving,
     setSaving,
 
-    initialSaving,
-
     portion,
     setPortion,
-
-    initialPortion,
 
     open,
     setOpen,
@@ -96,16 +89,23 @@ export default function EventForm({ onSave }: Props) {
                   {/* undo button */}
                   <button
                     onClick={() => {
-                      setEvent(initialEvent);
-                      setPayments(initialPayments);
-                      setSaving(initialSaving);
-                      setPortion(initialPortion);
-                      setEditing(false);
+                      onReset();
                     }}
                   >
                     <AiOutlineUndo />
                   </button>
                 </>
+              )}
+
+              {/* close button */}
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    onDelete();
+                  }}
+                >
+                  <AiFillDelete />
+                </button>
               )}
 
               {/* open/close button */}

@@ -9,11 +9,11 @@ Dev process:
 
 Todo:
 
-- [ ] separate new event, edit event, and view event (admin / viewer also)
+- [x] separate new event, edit event, and view event (admin / viewer also)
     - [x] new event
     - [x] edit event
     - [x] view event
-    - [ ] delete event
+    - [x] delete event
 - [x] introduce saving event (new / edit)
 - [x] introduce saving payment (new / edit)
 - [x] introduce changeing payye from list

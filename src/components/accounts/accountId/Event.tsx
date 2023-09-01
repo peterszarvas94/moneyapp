@@ -44,16 +44,29 @@ function Details() {
 	const { getEvents } = useEventListContext();
 	const { mutateAsync: updateEvent } = api.event.update.useMutation();
 	const { mutateAsync: updatePayment } = api.payment.update.useMutation();
+	const { mutateAsync: deleteEvent } = api.event.delete.useMutation();
 
 	const {
 		event,
+		setEvent,
+		initialEvent,
 		setInitialEvent,
+
 		payments,
+		setPayments,
+		initialPayments,
 		setInitialPayments,
+
 		saving,
+		setSaving,
+		initialSaving,
 		setInitialSaving,
+
 		portion,
+		setPortion,
+		initialPortion,
 		setInitialPortion,
+
 		setEditing
 	} = useEventContext();
 
@@ -62,6 +75,23 @@ function Details() {
 
 	return (
 		<EventForm
+			onDelete={async () => {
+				if (confirm("Are you sure you want to delete this event?")) {
+					try {
+						await deleteEvent({ accountId, eventId: id });
+					} catch (error) {
+						toast.error("Failed to delete event");
+					}
+					getEvents();
+				}
+			}}
+			onReset={() => {
+				setEvent(initialEvent);
+				setPayments(initialPayments);
+				setSaving(initialSaving);
+				setPortion(initialPortion);
+				setEditing(false);
+			}}
 			onSave={async () => {
 				try {
 					await updateEvent({ accountId, name, income, saving, delivery, eventId: id });
