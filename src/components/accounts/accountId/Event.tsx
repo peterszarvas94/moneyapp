@@ -1,95 +1,98 @@
 import { toast } from "react-hot-toast";
-import { EventContextProvider, useEventContext } from "~/context/event";
 import { api } from "~/utils/api";
 import { useAccountContext } from "~/context/account";
 import EventForm from "./EventForm";
 import EventLoading from "./EventLoading";
-import { useEventListContext } from "~/context/eventlist";
+import { Event as EventType } from "~/server/db/schema";
+import { useState } from "react";
 
 interface Props {
-	eventId: string;
+	event: EventType;
+	refetch: () => void;
 }
 
-export default function Event({ eventId }: Props) {
+export default function Event({ event, refetch }: Props) {
+	const getEvents = refetch;
 	const { accountId } = useAccountContext();
-	const { data: payments } = api.event.getPayments.useQuery({ accountId, eventId });
-	const { events } = useEventListContext();
-	const event = events?.find((event) => event.id === eventId);
+	const { data: payments, refetch: getPayemnts } = api.event.getPayments.useQuery({ accountId, eventId: event.id });
+	const { data: payees } = api.account.getPayees.useQuery({ accountId });
+	const { mutateAsync: updateEvent } = api.event.update.useMutation();
+	const { mutateAsync: updatePayment } = api.payment.update.useMutation();
+	const { mutateAsync: addPayment } = api.payment.new.useMutation();
+	const { mutateAsync: deleteEvent } = api.event.delete.useMutation();
 
-	if (!event) {
-		return null;
-	}
+	const [editing, setEditing] = useState(false);
 
-	if (!payments) {
+	if (!payments || !payees) {
 		return (
 			<EventLoading />
 		)
 	}
 
 	return (
-		<EventContextProvider
+		<EventForm
 			event={event}
 			payments={payments}
-		>
-			<Details />
-		</EventContextProvider>
-	)
-}
+			payees={payees}
 
-function Details() {
-	const { accountId } = useAccountContext();
-	const { getEvents } = useEventListContext();
-	const { mutateAsync: updateEvent } = api.event.update.useMutation();
-	const { mutateAsync: updatePayment } = api.payment.update.useMutation();
-	const { mutateAsync: deleteEvent } = api.event.delete.useMutation();
+			editing={editing}
+			setEditing={setEditing}
 
-	const {
-		event,
-		payments,
-		setEditing,
-	} = useEventContext();
-
-	const { id } = event;
-
-	return (
-		<EventForm
 			onDelete={async () => {
 				if (confirm("Are you sure you want to delete this event?")) {
 					try {
-						await deleteEvent({ accountId, eventId: id });
+						await deleteEvent({ accountId, eventId: event.id });
 					} catch (error) {
 						toast.error("Failed to delete event");
 					}
+
 					getEvents();
+					getPayemnts();
 				}
 			}}
 			onSave={async (data) => {
-				const { name, income, delivery: deliveryStr } = data;
+				const { name, income, delivery: deliveryStr, saving, payments, newPayments } = data;
 				const delivery = new Date(deliveryStr);
 
 				try {
-					await updateEvent({ accountId, name, income, delivery, eventId: id });
+					await updateEvent({ accountId, name, income, delivery, saving, eventId: event.id });
 				} catch (error) {
 					toast.error("Failed to update event");
 				}
 
-				// for (const payment of payments) {
-				// 	try {
-				// 		await updatePayment({
-				// 			accountId,
-				// 			extra: payment.extra,
-				// 			factor: payment.factor,
-				// 			paymentId: payment.id,
-				// 			payeeId: payment.payee.id
-				// 		});
-				// 	} catch (error) {
-				// 		toast.error("Failed to update payment");
-				// 		return;
-				// 	}
-				// }
+				for (const payment of payments) {
+					try {
+						await updatePayment({
+							accountId,
+							extra: payment.extra,
+							factor: payment.factor,
+							paymentId: payment.paymentId,
+							payeeId: payment.payeeId
+						});
+					} catch (error) {
+						toast.error("Failed to update payment");
+						return;
+					}
+				}
+
+				for (const payment of newPayments) {
+					try {
+						await addPayment({
+							accountId,
+							eventId: event.id,
+							extra: payment.extra,
+							factor: payment.factor,
+							payeeId: payment.payeeId
+						});
+					} catch (error) {
+						toast.error("Failed to add payment");
+						return;
+					}
+				}
 
 				setEditing(false);
 				getEvents();
+				getPayemnts();
 			}}
 		/>
 	)

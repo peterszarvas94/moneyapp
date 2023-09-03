@@ -4,23 +4,33 @@ import { useAccountContext } from "~/context/account";
 import { InputNumber } from "./InputNumber";
 import { calculatePortion, calculateSaving } from "~/utils/money";
 import Payment from "./Payment";
-import { useEventContext } from "~/context/event";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
-import { useEffect } from "react";
-import { EventDataType } from "~/utils/types";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import type { EventDataType, PaymentWithPayee } from "~/utils/types";
+import type { Event as EventType, Payee } from "~/server/db/schema";
+import { parseDate } from "~/utils/date";
+import AddButton from "./AddButton";
 
 interface Props {
+  event: EventType,
+  payments: PaymentWithPayee[],
+  payees: Payee[],
+  editing: boolean,
+  setEditing: Dispatch<SetStateAction<boolean>>
   onSave: (data: EventDataType) => void,
   onDelete: () => void,
 }
 
-export default function EventForm({ onSave, onDelete }: Props) {
+export default function EventForm({ event, payments, payees, onSave, onDelete, editing, setEditing }: Props) {
   const { access } = useAccountContext();
+
   const isAdmin = access === "admin";
 
-  const { event, payments, open, setOpen, editing, setEditing } = useEventContext();
+  const [open, setOpen] = useState(false);
+  const [calculating, setCalculating] = useState(false);
 
-  const { name, delivery, income } = event;
+  const { name, delivery, income, saving } = event;
+
   const defaultPayments = payments.map((payment) => ({
     paymentId: payment.id,
     payeeId: payment.payeeId,
@@ -28,24 +38,38 @@ export default function EventForm({ onSave, onDelete }: Props) {
     extra: payment.extra,
   }));
 
+  const defaultValues = {
+    name,
+    income,
+    delivery: parseDate(delivery),
+    saving,
+    portion: calculatePortion(saving, defaultPayments, [], income),
+    payments: defaultPayments,
+    newPayments: [],
+  }
+
   const { control, handleSubmit, register, reset, setValue, getValues } = useForm<EventDataType>({
-    defaultValues: {
-      name,
-      income,
-      delivery: delivery.toISOString().slice(0, 10),
-      saving: 0,
-      portion: calculatePortion(0, defaultPayments, income),
-      payments: defaultPayments,
-    },
+    defaultValues
   });
-  const { fields } = useFieldArray({
+
+  const { fields: paymentFields } = useFieldArray({
     control,
     name: "payments",
+  });
+
+  const { fields: newPaymentFields, append: appendNewPayment } = useFieldArray({
+    control,
+    name: "newPayments",
   });
 
   const watchedPayments = useWatch({
     control,
     name: "payments",
+  });
+
+  const watchedNewPayments = useWatch({
+    control,
+    name: "newPayments",
   });
 
   const watchedIncome = useWatch({
@@ -64,10 +88,13 @@ export default function EventForm({ onSave, onDelete }: Props) {
   });
 
   useEffect(() => {
-    const saving = getValues("saving");
-    const newPortion = calculatePortion(saving, watchedPayments, watchedIncome);
+    const newPortion = calculatePortion(watchedSaving, watchedPayments, watchedNewPayments, watchedIncome);
     setValue("portion", newPortion);
-  }, [watchedSaving, watchedPayments, watchedIncome]);
+
+    // const newSaving = calculateSaving(watchedPortion, watchedPayments, watchedNewPayments, watchedIncome);
+    // setValue("saving", newSaving);
+
+  }, [watchedSaving, watchedPayments, watchedNewPayments, watchedIncome]);
 
   return (
     <li className="pb-4">
@@ -119,7 +146,7 @@ export default function EventForm({ onSave, onDelete }: Props) {
                     {/* undo button */}
                     <button
                       type="button"
-                      onClick={() => reset()}
+                      onClick={() => reset(defaultValues)}
                     >
                       <AiOutlineUndo />
                     </button>
@@ -128,7 +155,7 @@ export default function EventForm({ onSave, onDelete }: Props) {
                     <button
                       type="button"
                       onClick={() => {
-                        reset();
+                        reset(defaultValues);
                         setEditing(false);
                       }}
                     >
@@ -149,7 +176,7 @@ export default function EventForm({ onSave, onDelete }: Props) {
 
             {/* delivery */}
             <li className="flex justify-between px-2">
-              <div className="h-6">Delivery (mm/dd/yyyy)</div>
+              <div className="h-6">Delivery</div>
               {editing ? (
                 <input
                   className="w-32 h-6 border border-gray-400 rounded text-right"
@@ -163,7 +190,7 @@ export default function EventForm({ onSave, onDelete }: Props) {
 
             {/* income */}
             <li className="flex justify-between px-2">
-              <div className="">Income</div>
+              <div className="h-6">Income</div>
               {editing ? (
                 <Controller
                   name="income"
@@ -246,7 +273,7 @@ export default function EventForm({ onSave, onDelete }: Props) {
             </div>
 
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 px-2 pt-1 pb-2">
-              {fields.map((field, index) => (
+              {paymentFields.map((field, index) => (
                 <Controller
                   key={field.id}
                   name={`payments.${index}`}
@@ -263,10 +290,53 @@ export default function EventForm({ onSave, onDelete }: Props) {
                       }}
                       onChange={renderField.onChange}
                       portion={watchedPortion}
+                      editing={editing}
+                      payees={payees}
+                    />
+                  )} />
+              ))}
+              {newPaymentFields.map((field, index) => (
+                <Controller
+                  key={field.id}
+                  name={`newPayments.${index}`}
+                  control={control}
+                  rules={{ required: true }}
+                  defaultValue={field}
+                  render={({ field: renderField }) => (
+                    <Payment
+                      value={{
+                        payeeId: renderField.value.payeeId,
+                        factor: renderField.value.factor,
+                        extra: renderField.value.extra,
+                      }}
+                      onChange={renderField.onChange}
+                      portion={watchedPortion}
+                      editing={editing}
+                      payees={payees}
                     />
                   )} />
               ))}
             </div>
+
+            {/* add payment */}
+            {editing && (
+              <div className="flex items-center justify-center pb-2">
+                <AddButton
+                  text="Add payment"
+                  onClick={() => {
+                    const payee = payees[0];
+                    if (!payee) return;
+
+                    const newPayment = {
+                      payeeId: payee.id,
+                      factor: 1,
+                      extra: 0,
+                    };
+                    appendNewPayment(newPayment);
+                  }}
+                />
+              </div>
+            )}
           </>
         )}
         {/* end: open payments */}

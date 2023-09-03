@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { Input } from "~/components/Input";
-import { InputNumber } from "~/components/InputNumber";
 import Label from "~/components/Label";
 import PageTitle from "~/components/PageTitle";
 import Spinner from "~/components/Spinner";
@@ -13,6 +12,7 @@ import { useAccountContext } from "~/context/account";
 import { api } from "~/utils/api";
 import AccessedPage from "~/components/accounts/accountId/AccessedPage";
 import BackButton from "~/components/BackButton";
+import { InputNumber } from "~/components/InputNumber_old";
 
 const NewEventPage: NextPage = () => {
   return (

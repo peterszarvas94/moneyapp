@@ -1,4 +1,4 @@
-import { Account, Membership, Payee, Payment, User, Event } from "~/server/db/schema";
+import { Account, Membership, Payee, Payment, User } from "~/server/db/schema";
 
 export type Access = "admin" | "viewer";
 
@@ -37,10 +37,17 @@ export type EventDataType = {
   saving: number;
   portion: number;
   payments: PaymentDataType[];
+  newPayments: NewPaymentDataType[];
 }
 
 export type PaymentDataType = {
   paymentId: string;
+  payeeId: string;
+  factor: number;
+  extra: number;
+}
+
+export type NewPaymentDataType = {
   payeeId: string;
   factor: number;
   extra: number;

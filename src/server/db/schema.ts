@@ -74,6 +74,7 @@ export const events = mysqlTable('events', {
   name: text('name').notNull(),
   description: text('description'),
   income: int('income').notNull(),
+  saving: int('saving').notNull(),
   delivery: datetime('delivery').notNull(),
   accountId: varchar('account_id', { length: 21 }).notNull(),
   createdAt: datetime('created_at').notNull(),

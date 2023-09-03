@@ -17,14 +17,11 @@ Todo:
 - [x] introduce saving event (new / edit)
 - [x] introduce saving payment (new / edit)
 - [x] introduce changeing payye from list
-- [ ] add new payment to event
+- [x] add new payment to event
 - [ ] delete payment from event
 - [ ] add spinners
 
-Rework:
+Fix:
 
-- [x] use forms instead of "initialstate"
-- [ ] submit all froms at once
-- [ ] differentiate new / edit forms (call different endpoints)
-- [x] simplify evenContext
-- [ ] simplify eventListContext
+- [ ] update saving
+- [ ] can not save payee name

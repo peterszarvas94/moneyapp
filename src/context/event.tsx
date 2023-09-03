@@ -1,11 +1,6 @@
 import { Dispatch, ReactNode, SetStateAction, createContext, useContext, useState } from "react";
-import { Event } from "~/server/db/schema";
-import { PaymentWithPayee } from "~/utils/types";
 
 type Context = {
-  event: Event;
-  payments: PaymentWithPayee[];
-
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
 
@@ -16,15 +11,11 @@ type Context = {
 export const EventContext = createContext<Context | null>(null);
 
 interface Props {
-  event: Event;
-  payments: PaymentWithPayee[];
   editing?: boolean;
   children: ReactNode;
 }
 
 export function EventContextProvider({
-  event,
-  payments,
   editing: propEditing,
   children
 }: Props) {
@@ -33,9 +24,6 @@ export function EventContextProvider({
 
   return (
     <EventContext.Provider value={{
-      event,
-      payments,
-      
       open,
       setOpen,
 

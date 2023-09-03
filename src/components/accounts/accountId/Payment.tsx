@@ -1,26 +1,18 @@
-import { calculatePortion, calculateTotal } from "~/utils/money";
+import { calculateTotal } from "~/utils/money";
 import { InputNumber } from "./InputNumber";
-import { useEventContext } from "~/context/event";
-import { api } from "~/utils/api";
-import { useAccountContext } from "~/context/account";
-import { PaymentDataType } from "~/utils/types";
+import type { PaymentDataType, NewPaymentDataType } from "~/utils/types";
+import type { Payee } from "~/server/db/schema";
 
 interface Props {
-  value: PaymentDataType;
-  onChange: (payment: PaymentDataType) => void;
+  value: PaymentDataType | NewPaymentDataType;
+  onChange: (payment: PaymentDataType | NewPaymentDataType) => void;
   portion: number;
+  editing: boolean;
+  payees: Payee[];
 }
 
-export default function Payment({ value, onChange, portion }: Props) {
+export default function Payment({ value, onChange, portion, editing, payees }: Props) {
   const payment = value;
-
-  const { event, payments, editing } = useEventContext();
-  const { accountId } = useAccountContext();
-  const { data: payees } = api.account.getPayees.useQuery({ accountId });
-
-  if (!payees) {
-    return null;
-  }
 
   return (
     <>
@@ -45,11 +37,7 @@ export default function Payment({ value, onChange, portion }: Props) {
       {editing ? (
         <InputNumber
           value={payment.factor}
-          onChange={(newFactor) => {
-            // const newPortion = calculatePortion(saving, newPayments, event.income);
-            // setPortion(newPortion);
-            onChange({ ...payment, factor: newFactor });
-          }}
+          onChange={(newFactor) => onChange({ ...payment, factor: newFactor })}
         />
       ) : (
         <div className="h-6 text-right">{payment.factor}</div>
@@ -68,17 +56,7 @@ export default function Payment({ value, onChange, portion }: Props) {
 
           <InputNumber
             value={payment.extra}
-            onChange={(newExtra) => {
-              onChange({ ...payment, extra: newExtra });
-
-              // const realExtra = newExtra ?? 1;
-              // const newPayment = { ...payment, extra: realExtra };
-              // const newPayments = [...payments];
-              // newPayments[index] = newPayment;
-              // const newPortion = calculatePortion(saving, newPayments, event.income);
-              // setPayments(newPayments);
-              // setPortion(newPortion);
-            }}
+            onChange={(newExtra) => onChange({ ...payment, extra: newExtra })}
           />
         ) : (
           <>

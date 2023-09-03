@@ -74,6 +74,7 @@ export const eventRouter = createTRPCRouter({
         id,
         name,
         description: description || null,
+        saving,
         income,
         delivery,
         accountId,
@@ -99,6 +100,7 @@ export const eventRouter = createTRPCRouter({
       description: z.string().optional().nullable(),
       delivery: z.date(),
       income: z.number(),
+      saving: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
       const { access } = ctx.self;
@@ -110,7 +112,7 @@ export const eventRouter = createTRPCRouter({
       }
 
       const { accountId } = ctx;
-      const { name, description, income, delivery, eventId } = input;
+      const { name, description, income, delivery, saving, eventId } = input;
       const now = new Date();
 
       try {
@@ -119,6 +121,7 @@ export const eventRouter = createTRPCRouter({
           description: description || null,
           delivery,
           income,
+          saving,
           updatedAt: now,
         }).where(and(
           eq(events.id, eventId),

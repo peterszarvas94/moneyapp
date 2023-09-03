@@ -4,13 +4,12 @@ import { useAccountContext } from "~/context/account";
 import AddButton from "./AddButton";
 import NewEvent from "./NewEvent";
 import { EventListProvider, useEventListContext } from "~/context/eventlist";
+import { api } from "~/utils/api";
 
 function EventList() {
-  const { accountId } = useAccountContext();
-
   return (
     <div className="px-4 pt-4">
-      <EventListProvider accountId={accountId}>
+      <EventListProvider>
         <Content />
       </EventListProvider>
     </div>
@@ -19,7 +18,9 @@ function EventList() {
 
 function Content() {
   const { access } = useAccountContext();
-  const { adding, setAdding, events } = useEventListContext();
+  const { adding, setAdding } = useEventListContext();
+  const { accountId } = useAccountContext();
+  const { data: events, refetch } = api.account.getEvents.useQuery({ accountId });
 
   if (!events) {
     return (
@@ -41,7 +42,8 @@ function Content() {
         {events.map((event) => (
           <Event
             key={event.id}
-            eventId={event.id}
+            event={event}
+            refetch={refetch}
           />
         ))}
         {access === "admin" && adding && (
@@ -51,6 +53,7 @@ function Content() {
       {access === "admin" && !adding && (
         <div className="pt-4 flex justify-center">
           <AddButton
+            text="New event"
             onClick={() => setAdding(true)}
           />
         </div>
