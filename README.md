@@ -20,3 +20,11 @@ Todo:
 - [ ] add new payment to event
 - [ ] delete payment from event
 - [ ] add spinners
+
+Rework:
+
+- [x] use forms instead of "initialstate"
+- [ ] submit all froms at once
+- [ ] differentiate new / edit forms (call different endpoints)
+- [x] simplify evenContext
+- [ ] simplify eventListContext

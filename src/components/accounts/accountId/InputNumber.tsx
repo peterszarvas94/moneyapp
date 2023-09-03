@@ -2,13 +2,13 @@ import { FiAlertTriangle } from "react-icons/fi";
 
 interface Props {
   value: number;
-  onChange: (newValue: number) => void;
+  onChange: (value: number) => void;
   min?: number;
   width?: string;
   invalid?: boolean;
 }
 
-export function InputNumber({ value, onChange, min, width, invalid }: Props) {
+export function InputNumber({ value, min, width, onChange, invalid }: Props) {
   const widthClass = width ?? "w-full";
   return (
     <div className="flex items-center gap-2">

@@ -1,9 +1,7 @@
 import { toast } from "react-hot-toast";
-import { calculatePortion } from "~/utils/money";
 import { EventContextProvider, useEventContext } from "~/context/event";
 import { api } from "~/utils/api";
 import { useAccountContext } from "~/context/account";
-import Spinner from "~/components/Spinner";
 import EventForm from "./EventForm";
 import EventLoading from "./EventLoading";
 import { useEventListContext } from "~/context/eventlist";
@@ -15,29 +13,28 @@ interface Props {
 export default function Event({ eventId }: Props) {
 	const { accountId } = useAccountContext();
 	const { data: payments } = api.event.getPayments.useQuery({ accountId, eventId });
-	const { data: event } = api.event.get.useQuery({ accountId, eventId });
+	const { events } = useEventListContext();
+	const event = events?.find((event) => event.id === eventId);
 
-	if (!event || !payments) {
+	if (!event) {
+		return null;
+	}
+
+	if (!payments) {
 		return (
 			<EventLoading />
 		)
 	}
 
-	const saving = 0;
-	const portion = calculatePortion(saving, payments, event.income);
-
 	return (
 		<EventContextProvider
 			event={event}
 			payments={payments}
-			saving={saving}
-			portion={portion}
 		>
 			<Details />
 		</EventContextProvider>
 	)
 }
-
 
 function Details() {
 	const { accountId } = useAccountContext();
@@ -48,30 +45,11 @@ function Details() {
 
 	const {
 		event,
-		setEvent,
-		initialEvent,
-		setInitialEvent,
-
 		payments,
-		setPayments,
-		initialPayments,
-		setInitialPayments,
-
-		saving,
-		setSaving,
-		initialSaving,
-		setInitialSaving,
-
-		portion,
-		setPortion,
-		initialPortion,
-		setInitialPortion,
-
-		setEditing
+		setEditing,
 	} = useEventContext();
 
-	const { id, name, delivery, income } = event;
-
+	const { id } = event;
 
 	return (
 		<EventForm
@@ -85,38 +63,31 @@ function Details() {
 					getEvents();
 				}
 			}}
-			onReset={() => {
-				setEvent(initialEvent);
-				setPayments(initialPayments);
-				setSaving(initialSaving);
-				setPortion(initialPortion);
-				setEditing(false);
-			}}
-			onSave={async () => {
+			onSave={async (data) => {
+				const { name, income, delivery: deliveryStr } = data;
+				const delivery = new Date(deliveryStr);
+
 				try {
-					await updateEvent({ accountId, name, income, saving, delivery, eventId: id });
+					await updateEvent({ accountId, name, income, delivery, eventId: id });
 				} catch (error) {
 					toast.error("Failed to update event");
 				}
 
-				for (const payment of payments) {
-					try {
-						await updatePayment({
-							accountId,
-							extra: payment.extra,
-							factor: payment.factor,
-							paymentId: payment.id,
-							payeeId: payment.payee.id
-						});
-					} catch (error) {
-						toast.error("Failed to update payment");
-						return;
-					}
-				}
-				setInitialEvent(event);
-				setInitialPayments(payments);
-				setInitialSaving(saving);
-				setInitialPortion(portion);
+				// for (const payment of payments) {
+				// 	try {
+				// 		await updatePayment({
+				// 			accountId,
+				// 			extra: payment.extra,
+				// 			factor: payment.factor,
+				// 			paymentId: payment.id,
+				// 			payeeId: payment.payee.id
+				// 		});
+				// 	} catch (error) {
+				// 		toast.error("Failed to update payment");
+				// 		return;
+				// 	}
+				// }
+
 				setEditing(false);
 				getEvents();
 			}}

@@ -1,7 +1,6 @@
 import Event from "~/components/accounts/accountId/Event";
 import Spinner from "~/components/Spinner";
 import { useAccountContext } from "~/context/account";
-import { api } from "~/utils/api";
 import AddButton from "./AddButton";
 import NewEvent from "./NewEvent";
 import { EventListProvider, useEventListContext } from "~/context/eventlist";

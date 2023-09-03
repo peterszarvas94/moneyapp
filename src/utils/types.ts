@@ -29,3 +29,19 @@ export type DropDownItem = {
 export type PaymentWithPayee = Payment & {
   payee: Payee,
 }
+
+export type EventDataType = {
+  name: string;
+  delivery: string;
+  income: number;
+  saving: number;
+  portion: number;
+  payments: PaymentDataType[];
+}
+
+export type PaymentDataType = {
+  paymentId: string;
+  payeeId: string;
+  factor: number;
+  extra: number;
+}

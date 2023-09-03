@@ -99,7 +99,6 @@ export const eventRouter = createTRPCRouter({
       description: z.string().optional().nullable(),
       delivery: z.date(),
       income: z.number(),
-      saving: z.number(),
     }))
     .mutation(async ({ input, ctx }): Promise<true> => {
       const { access } = ctx.self;
@@ -111,15 +110,8 @@ export const eventRouter = createTRPCRouter({
       }
 
       const { accountId } = ctx;
-      const { name, description, income, saving, delivery, eventId } = input;
+      const { name, description, income, delivery, eventId } = input;
       const now = new Date();
-
-      if (saving > income) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Saving cannot be greater than income",
-        })
-      }
 
       try {
         await ctx.db.update(events).set({
@@ -156,6 +148,17 @@ export const eventRouter = createTRPCRouter({
 
       const { eventId } = input;
 
+      // delete payments
+      try {
+        await ctx.db.delete(payments).where(eq(payments.eventId, eventId));
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Payments deletion failed",
+        })
+      }
+
+      // delete event
       try {
         await ctx.db.delete(events).where(eq(events.id, eventId));
         return true;

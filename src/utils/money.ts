@@ -1,10 +1,10 @@
-import { PaymentWithPayee } from "./types";
+import { PaymentDataType, PaymentWithPayee } from "./types";
 
 export function calculateTotal(portion: number, factor: number, extra: number) {
   return portion * factor + extra;
 }
 
-export function calculatePortion(saving: number, payments: PaymentWithPayee[], income: number) {
+export function calculatePortion(saving: number, payments: PaymentDataType[], income: number) {
   const factor_sum = payments.reduce((acc, payment) => payment.factor + acc, 0) || 1;
   const extra_sum = payments.reduce((acc, payment) => payment.extra + acc, 0);
   const expense_sum = extra_sum + saving;
@@ -14,7 +14,7 @@ export function calculatePortion(saving: number, payments: PaymentWithPayee[], i
   return Math.floor(partial * 100) / 100;
 }
 
-export function calculateSaving(portion: number, payments: PaymentWithPayee[], income: number) {
+export function calculateSaving(portion: number, payments: PaymentDataType[], income: number) {
   const total_sum = payments.reduce((acc, payments) => calculateTotal(
     portion, payments.factor, payments.extra
   ) + acc, 0);

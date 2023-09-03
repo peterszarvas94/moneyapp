@@ -1,22 +1,24 @@
 import { calculatePortion, calculateTotal } from "~/utils/money";
 import { InputNumber } from "./InputNumber";
 import { useEventContext } from "~/context/event";
-import { toast } from "react-hot-toast";
 import { api } from "~/utils/api";
 import { useAccountContext } from "~/context/account";
+import { PaymentDataType } from "~/utils/types";
 
 interface Props {
-  paymentId: string
+  value: PaymentDataType;
+  onChange: (payment: PaymentDataType) => void;
+  portion: number;
 }
 
-export default function Payment({ paymentId }: Props) {
-  const { event, payments, setPayments, saving, portion, setPortion, editing } = useEventContext();
+export default function Payment({ value, onChange, portion }: Props) {
+  const payment = value;
+
+  const { event, payments, editing } = useEventContext();
   const { accountId } = useAccountContext();
   const { data: payees } = api.account.getPayees.useQuery({ accountId });
-  const index = payments.findIndex((payment) => payment.id === paymentId);
-  const payment = payments[index];
 
-  if (!payment || !payees) {
+  if (!payees) {
     return null;
   }
 
@@ -27,19 +29,7 @@ export default function Payment({ paymentId }: Props) {
         <select
           className="h-6 border border-gray-400 rounded bg-white"
           required={true}
-          value={payment.payee.id}
-          onChange={(e) => {
-            const newPayeeId = e.target.value;
-            const newPayee = payees.find((payee) => payee.id === newPayeeId);
-            if (!newPayee) {
-              toast.error("Invalid payee");
-              return;
-            }
-            const newPayment = { ...payment, payee: newPayee };
-            const newPayments = [...payments];
-            newPayments[index] = newPayment;
-            setPayments(newPayments);
-          }}
+          defaultValue={payment.payeeId}
         >
           {payees.map((payee) => (
             <option key={payee.id} value={payee.id}>
@@ -48,7 +38,7 @@ export default function Payment({ paymentId }: Props) {
           ))}
         </select>
       ) : (
-        <div className="h-6">{payment.payee.name}</div>
+        <div className="h-6">{payees.find((payee) => payee.id === payment.payeeId)?.name}</div>
       )}
 
       {/* factor */}
@@ -56,12 +46,9 @@ export default function Payment({ paymentId }: Props) {
         <InputNumber
           value={payment.factor}
           onChange={(newFactor) => {
-            const newPayment = { ...payment, factor: newFactor };
-            const newPayments = [...payments];
-            newPayments[index] = newPayment;
-            setPayments(newPayments);
-            const newPortion = calculatePortion(saving, newPayments, event.income);
-            setPortion(newPortion);
+            // const newPortion = calculatePortion(saving, newPayments, event.income);
+            // setPortion(newPortion);
+            onChange({ ...payment, factor: newFactor });
           }}
         />
       ) : (
@@ -78,20 +65,19 @@ export default function Payment({ paymentId }: Props) {
       {/* extra */}
       <div className="h-6 text-right">
         {editing ? (
+
           <InputNumber
             value={payment.extra}
             onChange={(newExtra) => {
-              const realExtra = newExtra ?? 1;
-              const newPayment = { ...payment, extra: realExtra };
-              const newPayments = [...payments];
-              newPayments[index] = newPayment;
-              const newPortion = calculatePortion(saving, newPayments, event.income);
-              // if (newPortion < 0) {
-              //   toast.error("Extra is too high");
-              //   return;
-              // }
-              setPayments(newPayments);
-              setPortion(newPortion);
+              onChange({ ...payment, extra: newExtra });
+
+              // const realExtra = newExtra ?? 1;
+              // const newPayment = { ...payment, extra: realExtra };
+              // const newPayments = [...payments];
+              // newPayments[index] = newPayment;
+              // const newPortion = calculatePortion(saving, newPayments, event.income);
+              // setPayments(newPayments);
+              // setPortion(newPortion);
             }}
           />
         ) : (
