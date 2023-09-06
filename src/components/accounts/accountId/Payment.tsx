@@ -22,6 +22,12 @@ export default function Payment({ value, onChange, portion, editing, payees }: P
           className="h-6 border border-gray-400 rounded bg-white"
           required={true}
           defaultValue={payment.payeeId}
+          onChange={(e) =>
+            onChange({
+              ...payment,
+              payeeId: e.target.value
+            })
+          }
         >
           {payees.map((payee) => (
             <option key={payee.id} value={payee.id}>
@@ -45,7 +51,7 @@ export default function Payment({ value, onChange, portion, editing, payees }: P
 
       {/* amount */}
       <div className="h-6 text-right hidden sm:block">
-        {(payment.factor * portion).toLocaleString("hu", {
+        {((payment.factor ?? 0) * portion).toLocaleString("hu", {
           maximumFractionDigits: 2
         })}
       </div>
@@ -53,23 +59,22 @@ export default function Payment({ value, onChange, portion, editing, payees }: P
       {/* extra */}
       <div className="h-6 text-right">
         {editing ? (
-
           <InputNumber
             value={payment.extra}
             onChange={(newExtra) => onChange({ ...payment, extra: newExtra })}
           />
         ) : (
           <>
-            {payment.extra.toLocaleString("hu", {
+            {payment.extra?.toLocaleString("hu", {
               maximumFractionDigits: 2
-            })}
+            }) ?? 0}
           </>
         )}
       </div>
 
       {/* total */}
       <div className="h-6 text-right">
-        {calculateTotal(portion, payment.factor, payment.extra).toLocaleString("hu", {
+        {calculateTotal(portion, payment.factor ?? 0, payment.extra ?? 0).toLocaleString("hu", {
           maximumFractionDigits: 2
         })}
       </div>

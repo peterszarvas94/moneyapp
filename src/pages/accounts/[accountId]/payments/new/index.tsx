@@ -77,7 +77,6 @@ function Content() {
   }
 
   const onSubmit: SubmitHandler<Form> = async (data) => {
-    console.log(data);
     setSaving(true);
 
     const { payeeId, multiplier, extra } = data;

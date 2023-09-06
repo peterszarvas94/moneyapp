@@ -8,7 +8,7 @@ export function calculatePortion(
   saving: number,
   payments: PaymentDataType[],
   newPayments: NewPaymentDataType[],
-  income: number
+  income: number,
 ) {
   const stripped_payments = payments.map((payment) => ({
     factor: payment.factor,
@@ -21,9 +21,9 @@ export function calculatePortion(
   }));
 
   const all_payments = stripped_payments.concat(stripped_newPayments);
+  const factor_sum = all_payments.reduce((acc, payment) => (payment.factor ?? 0) + acc, 0) || 1;
 
-  const factor_sum = all_payments.reduce((acc, payment) => payment.factor + acc, 0) || 1;
-  const extra_sum = all_payments.reduce((acc, payment) => payment.extra + acc, 0);
+  const extra_sum = all_payments.reduce((acc, payment) => (payment.extra ?? 0) + acc, 0);
   const expense_sum = extra_sum + saving;
   const remaining = income - expense_sum;
   const partial = remaining / factor_sum;
@@ -50,7 +50,7 @@ export function calculateSaving(
   const all_payments = stripped_payments.concat(stripped_newPayments);
 
   const total_sum = all_payments.reduce((acc, payments) => calculateTotal(
-    portion, payments.factor, payments.extra
+    portion, payments.factor ?? 0, payments.extra ?? 0
   ) + acc, 0);
   const saving = income - total_sum;
   // round to 2 decimal places

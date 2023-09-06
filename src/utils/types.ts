@@ -33,9 +33,9 @@ export type PaymentWithPayee = Payment & {
 export type EventDataType = {
   name: string;
   delivery: string;
-  income: number;
-  saving: number;
-  portion: number;
+  income: number | null;
+  saving: number | null;
+  portion: number | null;
   payments: PaymentDataType[];
   newPayments: NewPaymentDataType[];
 }
@@ -43,12 +43,12 @@ export type EventDataType = {
 export type PaymentDataType = {
   paymentId: string;
   payeeId: string;
-  factor: number;
-  extra: number;
+  factor: number | null;
+  extra: number | null;
 }
 
 export type NewPaymentDataType = {
   payeeId: string;
-  factor: number;
-  extra: number;
+  factor: number | null;
+  extra: number | null;
 }

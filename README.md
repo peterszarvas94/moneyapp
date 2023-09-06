@@ -23,5 +23,5 @@ Todo:
 
 Fix:
 
-- [ ] update saving
-- [ ] can not save payee name
+- [x] update saving
+- [x] can not save payee name

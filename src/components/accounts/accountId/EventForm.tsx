@@ -5,11 +5,12 @@ import { InputNumber } from "./InputNumber";
 import { calculatePortion, calculateSaving } from "~/utils/money";
 import Payment from "./Payment";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import type { EventDataType, PaymentWithPayee } from "~/utils/types";
+import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
+import type { EventDataType, NewPaymentDataType, PaymentDataType, PaymentWithPayee } from "~/utils/types";
 import type { Event as EventType, Payee } from "~/server/db/schema";
 import { parseDate } from "~/utils/date";
 import AddButton from "./AddButton";
+import { argv0 } from "process";
 
 interface Props {
   event: EventType,
@@ -23,11 +24,9 @@ interface Props {
 
 export default function EventForm({ event, payments, payees, onSave, onDelete, editing, setEditing }: Props) {
   const { access } = useAccountContext();
-
   const isAdmin = access === "admin";
 
   const [open, setOpen] = useState(false);
-  const [calculating, setCalculating] = useState(false);
 
   const { name, delivery, income, saving } = event;
 
@@ -38,64 +37,33 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
     extra: payment.extra,
   }));
 
+  const defaultDelivery = parseDate(delivery);
+  const defaultPortion = useMemo(() => calculatePortion(saving, defaultPayments, [], income), [saving, defaultPayments, income]);
+
   const defaultValues = {
     name,
     income,
-    delivery: parseDate(delivery),
+    delivery: defaultDelivery,
     saving,
-    portion: calculatePortion(saving, defaultPayments, [], income),
+    portion: defaultPortion,
     payments: defaultPayments,
     newPayments: [],
   }
 
-  const { control, handleSubmit, register, reset, setValue, getValues } = useForm<EventDataType>({
-    defaultValues
-  });
+  const { control, handleSubmit, register, reset, setValue, getValues } = useForm<EventDataType>({ defaultValues });
 
-  const { fields: paymentFields } = useFieldArray({
-    control,
-    name: "payments",
-  });
+  const { fields: paymentFields } = useFieldArray({ control, name: "payments" });
+  const { fields: newPaymentFields, append: appendNewPayment } = useFieldArray({ control, name: "newPayments" });
 
-  const { fields: newPaymentFields, append: appendNewPayment } = useFieldArray({
-    control,
-    name: "newPayments",
-  });
-
-  const watchedPayments = useWatch({
-    control,
-    name: "payments",
-  });
-
-  const watchedNewPayments = useWatch({
-    control,
-    name: "newPayments",
-  });
-
-  const watchedIncome = useWatch({
-    control,
-    name: "income",
-  });
-
-  const watchedSaving = useWatch({
-    control,
-    name: "saving",
-  });
-
-  const watchedPortion = useWatch({
-    control,
-    name: "portion",
-  });
+  const watchedPortion = useWatch({ control, name: "portion" });
+  const watchedPayments = useWatch({ control, name: "payments" });
+  const watchedNewPayments = useWatch({ control, name: "newPayments" });
 
   useEffect(() => {
-    const newPortion = calculatePortion(watchedSaving, watchedPayments, watchedNewPayments, watchedIncome);
+    const newPortion = calculatePortion(getValues("saving") ?? 0, watchedPayments, watchedNewPayments, getValues("income") ?? 0);
     setValue("portion", newPortion);
-
-    // const newSaving = calculateSaving(watchedPortion, watchedPayments, watchedNewPayments, watchedIncome);
-    // setValue("saving", newSaving);
-
-  }, [watchedSaving, watchedPayments, watchedNewPayments, watchedIncome]);
-
+  }, [watchedPayments, watchedNewPayments]);
+    
   return (
     <li className="pb-4">
       <div className="border border-gray-200 rounded-lg">
@@ -200,7 +168,16 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
                     <InputNumber
                       width="w-32"
                       value={field.value}
-                      onChange={field.onChange}
+                      onChange={(newIncome) => {
+                        field.onChange(newIncome);
+                        const newSaving = calculateSaving(
+                          getValues("portion") ?? 0,
+                          getValues("payments"),
+                          getValues("newPayments"),
+                          newIncome ?? 0
+                        );
+                        setValue("saving", newSaving);
+                      }}
                     />
                   )} />
               ) : (
@@ -225,13 +202,25 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
                         <InputNumber
                           width="w-32"
                           value={field.value}
-                          invalid={field.value < 0}
-                          onChange={field.onChange}
+                          invalid={!!field.value && field.value < 0}
+                          onChange={(newSaving) => {
+                            field.onChange(newSaving);
+                            console.log("new saving", newSaving);
+                            const newPortion = calculatePortion(
+                              newSaving ?? 0,
+                              getValues("payments"),
+                              getValues("newPayments"),
+                              getValues("income") ?? 0
+                            );
+                            setValue("portion", newPortion);
+                          }}
                         />
                       )} />
 
                   ) : (
-                    <div className="w-32 h-6 text-right">{getValues("saving").toLocaleString("hu")}</div>
+                    <div className="w-32 h-6 text-right">
+                      {getValues("saving")?.toLocaleString("hu") ?? 0}
+                    </div>
                   )}
                 </li>
 
@@ -247,12 +236,23 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
                         <InputNumber
                           width="w-32"
                           value={field.value}
-                          invalid={field.value < 0}
-                          onChange={field.onChange}
+                          invalid={!!field.value && field.value < 0}
+                          onChange={(newPortion) => {
+                            field.onChange(newPortion);
+                            const newSaving = calculateSaving(
+                              newPortion ?? 0,
+                              getValues("payments"),
+                              getValues("newPayments"),
+                              getValues("income") ?? 0
+                            );
+                            setValue("saving", newSaving);
+                          }}
                         />
                       )} />
                   ) : (
-                    <div className="w-32 h-6 text-right">{getValues("portion").toLocaleString("hu")}</div>
+                    <div className="w-32 h-6 text-right">
+                      {getValues("portion")?.toLocaleString("hu") ?? 0}
+                    </div>
                   )}
                 </li>
               </>
@@ -289,7 +289,7 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
                         extra: renderField.value.extra,
                       }}
                       onChange={renderField.onChange}
-                      portion={watchedPortion}
+                      portion={watchedPortion ?? 0}
                       editing={editing}
                       payees={payees}
                     />
@@ -310,7 +310,7 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
                         extra: renderField.value.extra,
                       }}
                       onChange={renderField.onChange}
-                      portion={watchedPortion}
+                      portion={watchedPortion ?? 0}
                       editing={editing}
                       payees={payees}
                     />
