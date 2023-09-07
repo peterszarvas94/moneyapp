@@ -18,6 +18,7 @@ export default function Event({ event, refetch }: Props) {
 	const { data: payees } = api.account.getPayees.useQuery({ accountId });
 	const { mutateAsync: updateEvent } = api.event.update.useMutation();
 	const { mutateAsync: updatePayment } = api.payment.update.useMutation();
+	const { mutateAsync: deletePayment } = api.payment.delete.useMutation();
 	const { mutateAsync: addPayment } = api.payment.new.useMutation();
 	const { mutateAsync: deleteEvent } = api.event.delete.useMutation();
 
@@ -51,11 +52,11 @@ export default function Event({ event, refetch }: Props) {
 				}
 			}}
 			onSave={async (data) => {
-				const { name, income, delivery: deliveryStr, saving, payments, newPayments } = data;
+				const { name, income, delivery: deliveryStr, saving, payments, newPayments, deletedPayments } = data;
 				const delivery = new Date(deliveryStr);
 
 				try {
-					await updateEvent({ accountId, name, income, delivery, saving, eventId: event.id });
+					await updateEvent({ accountId, name, income: income ?? 0, delivery, saving: saving ?? 0, eventId: event.id });
 				} catch (error) {
 					toast.error("Failed to update event");
 				}
@@ -64,8 +65,8 @@ export default function Event({ event, refetch }: Props) {
 					try {
 						await updatePayment({
 							accountId,
-							extra: payment.extra,
-							factor: payment.factor,
+							extra: payment.extra ?? 0,
+							factor: payment.factor ?? 0,
 							paymentId: payment.paymentId,
 							payeeId: payment.payeeId
 						});
@@ -80,12 +81,21 @@ export default function Event({ event, refetch }: Props) {
 						await addPayment({
 							accountId,
 							eventId: event.id,
-							extra: payment.extra,
-							factor: payment.factor,
+							extra: payment.extra ?? 0,
+							factor: payment.factor ?? 0,
 							payeeId: payment.payeeId
 						});
 					} catch (error) {
 						toast.error("Failed to add payment");
+						return;
+					}
+				}
+
+				for (const payment of deletedPayments) {
+					try {
+						await deletePayment({ accountId, paymentId: payment.paymentId });
+					} catch (error) {
+						toast.error("Failed to delete payment");
 						return;
 					}
 				}

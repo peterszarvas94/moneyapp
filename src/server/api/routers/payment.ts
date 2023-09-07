@@ -83,4 +83,31 @@ export const paymentRouter = createTRPCRouter({
         });
       }
     }),
+
+  delete: accessedProcedure
+    .input(z.object({
+      paymentId: z.string(),
+    }))
+    .mutation(async ({ input, ctx }): Promise<void> => {
+      const { access } = ctx.self;
+      if (access !== "admin") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only admins can delete payments",
+        })
+      }
+
+      const { paymentId } = input;
+
+      try {
+        await ctx.db.delete(payments).where(
+          eq(payments.id, paymentId)
+        );
+      } catch (e) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete payment",
+        });
+      }
+    }),
 });

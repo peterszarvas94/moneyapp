@@ -18,7 +18,7 @@ Todo:
 - [x] introduce saving payment (new / edit)
 - [x] introduce changeing payye from list
 - [x] add new payment to event
-- [ ] delete payment from event
+- [x] delete payment from event
 - [ ] add spinners
 
 Fix:

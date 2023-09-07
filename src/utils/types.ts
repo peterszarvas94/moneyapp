@@ -38,6 +38,7 @@ export type EventDataType = {
   portion: number | null;
   payments: PaymentDataType[];
   newPayments: NewPaymentDataType[];
+  deletedPayments: PaymentDataType[];
 }
 
 export type PaymentDataType = {

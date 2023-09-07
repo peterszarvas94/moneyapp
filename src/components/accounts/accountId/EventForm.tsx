@@ -1,16 +1,16 @@
+import type { Dispatch, SetStateAction } from "react";
+import type { EventDataType, PaymentWithPayee } from "~/utils/types";
+import type { Event as EventType, Payee } from "~/server/db/schema";
 import { AiFillEdit, AiFillSave, AiOutlineUndo, AiFillDelete, AiOutlineCloseCircle } from "react-icons/ai";
 import { MdArrowDropDown, MdArrowDropUp } from "react-icons/md";
-import { useAccountContext } from "~/context/account";
+import { BsPlusCircleFill } from "react-icons/bs";
 import { InputNumber } from "./InputNumber";
+import { useAccountContext } from "~/context/account";
 import { calculatePortion, calculateSaving } from "~/utils/money";
-import Payment from "./Payment";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
-import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
-import type { EventDataType, NewPaymentDataType, PaymentDataType, PaymentWithPayee } from "~/utils/types";
-import type { Event as EventType, Payee } from "~/server/db/schema";
+import { useEffect, useMemo, useState } from "react";
 import { parseDate } from "~/utils/date";
-import AddButton from "./AddButton";
-import { argv0 } from "process";
+import Payment from "./Payment";
 
 interface Props {
   event: EventType,
@@ -48,12 +48,14 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
     portion: defaultPortion,
     payments: defaultPayments,
     newPayments: [],
+    deletedPayments: [],
   }
 
   const { control, handleSubmit, register, reset, setValue, getValues } = useForm<EventDataType>({ defaultValues });
 
-  const { fields: paymentFields } = useFieldArray({ control, name: "payments" });
-  const { fields: newPaymentFields, append: appendNewPayment } = useFieldArray({ control, name: "newPayments" });
+  const { fields: paymentFields, remove: removePayment } = useFieldArray({ control, name: "payments" });
+  const { fields: newPaymentFields, append: appendNewPayment, remove: removeNewPayment } = useFieldArray({ control, name: "newPayments" });
+  const { append: appendDeletedPayment } = useFieldArray({ control, name: "deletedPayments" });
 
   const watchedPortion = useWatch({ control, name: "portion" });
   const watchedPayments = useWatch({ control, name: "payments" });
@@ -63,7 +65,7 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
     const newPortion = calculatePortion(getValues("saving") ?? 0, watchedPayments, watchedNewPayments, getValues("income") ?? 0);
     setValue("portion", newPortion);
   }, [watchedPayments, watchedNewPayments]);
-    
+
   return (
     <li className="pb-4">
       <div className="border border-gray-200 rounded-lg">
@@ -292,6 +294,10 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
                       portion={watchedPortion ?? 0}
                       editing={editing}
                       payees={payees}
+                      onDelete={() => {
+                        removePayment(index);
+                        appendDeletedPayment(renderField.value);
+                      }}
                     />
                   )} />
               ))}
@@ -313,30 +319,36 @@ export default function EventForm({ event, payments, payees, onSave, onDelete, e
                       portion={watchedPortion ?? 0}
                       editing={editing}
                       payees={payees}
+                      onDelete={() => removeNewPayment(index)}
                     />
                   )} />
               ))}
+
+              {/* add payment */}
+              {editing && (
+                <div className="flex gap-1">
+                  <button
+                    className="text-xl text-green-600"
+                    onClick={() => {
+                      const payee = payees[0];
+                      if (!payee) return;
+
+                      const newPayment = {
+                        payeeId: payee.id,
+                        factor: 1,
+                        extra: 0,
+                      };
+                      appendNewPayment(newPayment);
+                    }}
+                  >
+                    <BsPlusCircleFill />
+                  </button>
+                  <div className="h-6 px-1 border border-gray-300 rounded bg-white grow">
+                    ...
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* add payment */}
-            {editing && (
-              <div className="flex items-center justify-center pb-2">
-                <AddButton
-                  text="Add payment"
-                  onClick={() => {
-                    const payee = payees[0];
-                    if (!payee) return;
-
-                    const newPayment = {
-                      payeeId: payee.id,
-                      factor: 1,
-                      extra: 0,
-                    };
-                    appendNewPayment(newPayment);
-                  }}
-                />
-              </div>
-            )}
           </>
         )}
         {/* end: open payments */}
