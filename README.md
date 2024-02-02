@@ -1,4 +1,10 @@
-Dev process: 
+# Archived
+
+This project is abandoned, I rewrite it in Go.
+
+New project is [Pengoe](https://github.com/peterszarvas94/pengoe)
+
+# Dev process: 
 
 - npm run dev
 - npm run proxy (proxy server for webhooks)
@@ -7,7 +13,7 @@ Dev process:
 - change url in clerk path
 - change url in clerk webhook
 
-Todo:
+# Todo:
 
 - [x] separate new event, edit event, and view event (admin / viewer also)
     - [x] new event
